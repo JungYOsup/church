@@ -45,6 +45,7 @@ docs/plans/               계획서와 결정 기록
 - 비밀값은 `.env.local`에만 둔다. 이 파일은 읽거나 출력하지 않는다. 새 환경변수를 추가하면 `.env.example`에 이름과 설명만 적는다.
 - Next.js는 AGENTS.md대로 `node_modules/next/dist/docs/`의 문서를 먼저 읽는다. Tailwind v4, shadcn/ui, 카카오맵, Supabase는 처음 쓰는 API를 ctx7로 확인한다 (예: Tailwind v4는 `bg-gradient-*` 대신 `bg-linear-*`, Next 16은 이미지 `priority` 대신 `preload`/`fetchPriority`).
 - 커밋은 사용자가 요청할 때만 한다.
+- [하네스 지도](https://claude.ai/artifact/925V77bde8aKNrdrCgXHke)는 하네스 파일이나 커밋이 바뀌면 Stop hook(`.claude/hooks/sync-harness-map.sh`)이 갱신을 요청한다. 점수는 진단 결과가 바뀔 때만 고친다.
 
 ## Definition of Done
 - `npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
