@@ -1,0 +1,18 @@
+# 앱·테스트 코드가 바뀐 커밋이면 lint와 동작 테스트(빌드 포함)를 실행하고, 실패하면 커밋을 거부한다.
+# 문서만 바뀐 커밋(docs/, CLAUDE.md 등)은 건너뛴다.
+# 테스트는 staging된 내용이 아니라 작업 폴더의 현재 상태를 대상으로 한다.
+
+APP_FILES='^(src/|public/|e2e/|package\.json$|package-lock\.json$|tsconfig\.json$|next\.config\.ts$|playwright\.config\.ts$|eslint\.config\.mjs$|postcss\.config\.mjs$|components\.json$)'
+
+if ! git diff --cached --name-only | grep -qE "$APP_FILES"; then
+  exit 0
+fi
+
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+  nvm use --silent >/dev/null
+fi
+
+echo "pre-commit: 앱 코드가 바뀐 커밋이라 lint와 동작 테스트를 실행합니다 (약 20초)"
+npm run lint && npm run test

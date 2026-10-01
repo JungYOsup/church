@@ -6,7 +6,7 @@
 set -uo pipefail
 
 MAP_URL="https://claude.ai/artifact/925V77bde8aKNrdrCgXHke"
-HARNESS_PATHS=(CLAUDE.md AGENTS.md .claude docs .harness .gitignore .nvmrc package.json components.json eslint.config.mjs tsconfig.json)
+HARNESS_PATHS=(CLAUDE.md AGENTS.md .claude .husky docs .harness .gitignore .nvmrc package.json components.json eslint.config.mjs tsconfig.json)
 STATE_DIR="node_modules/.cache/claude-harness-map"
 
 [ "${1:-}" = "--mark-synced" ] || cat >/dev/null

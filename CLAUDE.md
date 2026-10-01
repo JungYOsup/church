@@ -34,6 +34,7 @@ docs/plans/               계획서와 결정 기록
 
 ## Commands
 - `nvm use` — Node 22로 전환 (새 터미널마다 먼저)
+- `npm install` — 의존성 설치. `prepare` 스크립트가 git hook(`.husky/`)도 연결한다
 - `npm run dev` — 개발 서버 (http://localhost:3000)
 - `npm run lint` — ESLint
 - `npm run build` — 프로덕션 빌드 + 타입 체크
@@ -51,6 +52,6 @@ docs/plans/               계획서와 결정 기록
 
 ## Definition of Done
 - `npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
-- `npm run test` 통과 (커밋 전, 또는 화면 동작을 바꿨을 때). 새 화면 동작을 만들면 `e2e/`에 테스트를 함께 추가한다.
+- `npm run test` 통과. 커밋할 때 git pre-commit hook(`.husky/pre-commit`)이 `npm run lint && npm run test`를 자동 실행하고, 실패하면 커밋이 거부된다(문서만 바뀐 커밋은 건너뜀). 실패하면 고친 뒤 새 커밋을 만들고 `--no-verify`로 우회하지 않는다. 새 화면 동작을 만들면 `e2e/`에 테스트를 함께 추가한다.
 - 보이는 모습(색·간격·디자인)은 `npm run dev`로 띄워 375px / 768px / 1440px 폭에서 직접 확인한다.
 - 계획과 달라진 점을 계획서 변경 이력에 적었다.
