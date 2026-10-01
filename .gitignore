@@ -1,0 +1,10 @@
+# 하네스 진단: config.json과 history.jsonl만 커밋하고 실행 산출물은 제외
+.harness/llm-cache.json
+.harness/runs/
+
+# 비밀값
+.env
+.env*.local
+
+# OS
+.DS_Store

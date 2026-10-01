@@ -1,0 +1,14 @@
+{
+  "stage": null,
+  "appDir": ".",
+  "run": {
+    "approved": {},
+    "timeoutSec": 300
+  },
+  "thresholds": {
+    "coverage": 80,
+    "claudeMdMaxLines": 200,
+    "repeatMinSessions": 3
+  },
+  "overrides": {}
+}
