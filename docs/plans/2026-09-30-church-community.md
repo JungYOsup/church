@@ -135,3 +135,8 @@ src/components/
 
 ## 변경 이력
 - 2026-09-30: 최초 작성 (목적·스택·지도·범위 결정)
+- 2026-10-01: 첫 작업 범위를 프로젝트 세팅, 헤더, 홈 히어로로 좁힘 ([세부 계획](2026-10-01-setup-header-hero.md)). 작은 범위로 하네스 사이클을 먼저 한 바퀴 돌려 보기 위함
+- 2026-10-01: `create-next-app`은 이 폴더의 기존 파일(CLAUDE.md, README.md, .harness/)과 충돌하므로 임시 폴더에서 생성한 뒤 필요한 파일만 복사하기로 함
+- 2026-10-01: create-next-app이 만드는 `AGENTS.md`를 채택. Next.js는 설치된 버전의 문서(`node_modules/next/dist/docs/`)를 기준으로 함
+- 2026-10-01: 히어로 배경을 서울 한강·도심 사진으로 정함 (Daryan Shamkhali, Unsplash License, https://unsplash.com/photos/vpk8V_O5-Xk). 교회 건물 사진 후보는 구도가 넓은 배너에 맞지 않았음. 인용구는 목업 문구 대신 개역개정 히브리서 10:24 본문을 사용
+- 2026-10-01: shadcn/ui 4.21은 `clsx`+`tailwind-merge` 대신 shadcn이 배포하는 `cn` 패키지를 설치함. 스타일 프리셋은 `radix-nova`
