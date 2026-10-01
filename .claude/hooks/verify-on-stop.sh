@@ -11,7 +11,7 @@ stop_active=$(printf '%s' "$input" | jq -r '.stop_hook_active // false' 2>/dev/n
 cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" || exit 0
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
-APP_PATHS=(src public package.json package-lock.json tsconfig.json next.config.ts eslint.config.mjs postcss.config.mjs components.json)
+APP_PATHS=(src public e2e package.json package-lock.json tsconfig.json next.config.ts playwright.config.ts eslint.config.mjs postcss.config.mjs components.json)
 STATE_FILE="node_modules/.cache/claude-verify/last-passed"
 
 changes=$(

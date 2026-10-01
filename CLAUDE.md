@@ -25,6 +25,7 @@ src/lib/types.ts          도메인 타입
 src/lib/data/             데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로
 src/lib/mock/             목데이터 (UI 단계 전용)
 public/images/            정적 이미지 (출처는 계획서 변경 이력에 기록)
+e2e/                      Playwright 동작 테스트. 메뉴 명세는 src를 가져오지 않고 테스트에 직접 적는다
 docs/plans/               계획서와 결정 기록
 ```
 앞으로 생길 폴더(`components/church`, `components/event`, `components/map`, `supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
@@ -36,6 +37,7 @@ docs/plans/               계획서와 결정 기록
 - `npm run dev` — 개발 서버 (http://localhost:3000)
 - `npm run lint` — ESLint
 - `npm run build` — 프로덕션 빌드 + 타입 체크
+- `npm run test` — Playwright 동작 테스트. 빌드 후 3100 포트에 서버를 띄워 실행한다 (개발 서버와 같이 켜도 됨, 약 15초)
 
 ## Rules
 - 여러 파일을 바꾸는 작업은 plan mode로 계획을 세우고, 모호한 요구사항은 먼저 질문한 뒤, 승인 후 구현한다.
@@ -49,5 +51,6 @@ docs/plans/               계획서와 결정 기록
 
 ## Definition of Done
 - `npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
-- UI를 바꿨다면 `npm run dev`로 띄워 375px / 768px / 1440px 폭에서 화면을 확인한다.
+- `npm run test` 통과 (커밋 전, 또는 화면 동작을 바꿨을 때). 새 화면 동작을 만들면 `e2e/`에 테스트를 함께 추가한다.
+- 보이는 모습(색·간격·디자인)은 `npm run dev`로 띄워 375px / 768px / 1440px 폭에서 직접 확인한다.
 - 계획과 달라진 점을 계획서 변경 이력에 적었다.
