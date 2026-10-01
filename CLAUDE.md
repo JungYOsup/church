@@ -47,6 +47,6 @@ docs/plans/               계획서와 결정 기록
 - 커밋은 사용자가 요청할 때만 한다.
 
 ## Definition of Done
-- `npm run lint && npm run build` 통과
+- `npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
 - UI를 바꿨다면 `npm run dev`로 띄워 375px / 768px / 1440px 폭에서 화면을 확인한다.
 - 계획과 달라진 점을 계획서 변경 이력에 적었다.
