@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # 함께하는 교회
 
 여러 지역 교회를 지도 위에서 연결하는 교회 연합 커뮤니티 웹. 포트폴리오/학습용 1인 프로젝트이고, 목표는 완성도 있는 데모와 공개 URL이다.
@@ -12,17 +14,20 @@
 - 배포: Vercel
 
 ## Architecture
-앱 코드는 아직 없다. 첫 세팅 작업에서 아래 구조로 만들고, 실제 구조가 달라지면 이 절을 고친다.
-
 ```
-src/app/              라우트: 홈, map, churches/[id], events, notices, community, admin
-src/components/       layout/ home/ church/ event/ map/ ui/(shadcn)
-src/lib/types.ts      도메인 타입 (Church, ChurchEvent, Notice, Post, Stats, UserProfile)
-src/lib/data/         데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로
-src/lib/mock/         목데이터 (UI 단계 전용)
-supabase/migrations/  DB 스키마 (백엔드 단계)
-docs/plans/           계획서와 결정 기록
+src/app/                  라우트. 홈만 구현했고 map, events, notices, community, admin은 ComingSoon 자리표시 페이지
+src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
+src/components/home/      홈 섹션 (HeroBanner)
+src/components/common/    여러 페이지가 쓰는 컴포넌트 (ComingSoon)
+src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
+src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
+src/lib/types.ts          도메인 타입
+src/lib/data/             데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로
+src/lib/mock/             목데이터 (UI 단계 전용)
+public/images/            정적 이미지 (출처는 계획서 변경 이력에 기록)
+docs/plans/               계획서와 결정 기록
 ```
+앞으로 생길 폴더(`components/church`, `components/event`, `components/map`, `supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
 
 데이터 흐름: 페이지/컴포넌트 → `src/lib/data/*.ts`의 async 함수 → 목데이터(UI 단계) 또는 Supabase(백엔드 단계). 백엔드로 바꿀 때는 이 함수 안쪽만 고치고 UI 코드는 건드리지 않는다.
 
@@ -38,7 +43,7 @@ docs/plans/           계획서와 결정 기록
 - 컴포넌트는 `src/lib/mock/`이나 Supabase 클라이언트를 직접 import하지 않고, 항상 `src/lib/data/` 함수를 거친다.
 - 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없으면 지도 자리에 대체 화면을 보여준다.
 - 비밀값은 `.env.local`에만 둔다. 이 파일은 읽거나 출력하지 않는다. 새 환경변수를 추가하면 `.env.example`에 이름과 설명만 적는다.
-- Next.js 16, Tailwind v4, shadcn/ui, 카카오맵, Supabase는 최근 버전에서 API가 크게 바뀌었다. 처음 쓰는 API는 ctx7로 현재 문서를 확인하고 쓴다.
+- Next.js는 AGENTS.md대로 `node_modules/next/dist/docs/`의 문서를 먼저 읽는다. Tailwind v4, shadcn/ui, 카카오맵, Supabase는 처음 쓰는 API를 ctx7로 확인한다 (예: Tailwind v4는 `bg-gradient-*` 대신 `bg-linear-*`, Next 16은 이미지 `priority` 대신 `preload`/`fetchPriority`).
 - 커밋은 사용자가 요청할 때만 한다.
 
 ## Definition of Done
