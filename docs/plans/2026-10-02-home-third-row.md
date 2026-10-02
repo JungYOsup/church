@@ -183,7 +183,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - 정렬 방향 뒤집기: 순서 테스트 2개("지난 항목은 빼고 …", "limit개만 남긴다")만 실패 → `2 failed | 15 passed`
       - 되돌린 뒤 `17 passed`
     - lint 종료 코드 0, build `✓ Compiled successfully in 2.1s`
-- [ ] **T2. 날짜·상대 시간 표기 (순수 로직)와 UTC 단위 테스트**
+- [x] **T2. 날짜·상대 시간 표기 (순수 로직)와 UTC 단위 테스트**
   - 파일: `src/lib/datetime.test.ts`, `src/lib/datetime.ts`, `vitest.config.mts`
   - 의존: 없음
   - 테스트 먼저(red): `datetime.test.ts`를 먼저 씁니다.
@@ -196,6 +196,15 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
   - 확인(동작 증거):
     - `npm run test:unit` 통과(T1 포함)
     - 일부러 깨뜨려 봅니다(확인 후 되돌림): `timeZone: "Asia/Seoul"`을 빼면 날짜가 서울과 다른 시각의 테스트가 실패합니다. 이 컴퓨터(KST)에서도 잡힌다는 증거입니다.
+  - 증거:
+    - red: 빈 문자열 stub, TZ 설정 전 → `Tests 18 failed | 17 passed (35)`. 새 테스트 18개가 모두 실패했고, 그중 "단위 테스트는 배포 서버(Vercel)처럼 UTC에서 돈다"가 있습니다.
+    - green: `vitest.config.mts` 맨 위에 `process.env.TZ = "UTC"`를 두고 구현 → `Tests 35 passed (35)`
+    - 깨뜨려 보기:
+      - `timeZone: SEOUL` 제거(UTC에서 실행): 표기 테스트 6개 실패(저녁·오전·정오·다음 날, 배지, 날짜) → `6 failed | 29 passed`
+      - 위에 더해 `process.env.TZ` 줄도 제거(KST에서 실행): 표기 테스트 6개는 다시 통과하고, UTC 확인 테스트만 실패 → `1 failed | 34 passed`. UTC 설정이 없으면 시간대를 빼먹은 코드가 이 컴퓨터에서는 보이지 않는다는 증거이고, 확인 테스트가 그 설정이 빠진 것을 잡습니다.
+      - 되돌린 뒤 `35 passed`
+    - lint 종료 코드 0, build `✓ Compiled successfully in 1228ms`
+    - 테스트 이름: 처음 쓴 상대 시간 테스트는 `%s → %s`에 기대값 대신 입력 시각이 찍혀서, green 전에 인자 순서를 바꿔 "2시간 전 → 2시간 전"처럼 읽히게 했습니다.
 - [ ] **T3. 행사 사진 6장 준비**
   - 파일: `public/images/events/*.jpg` (6개)
   - 의존: 없음
