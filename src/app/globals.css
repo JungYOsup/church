@@ -39,6 +39,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-stat-blue: var(--stat-blue);
+  --color-stat-blue-soft: var(--stat-blue-soft);
+  --color-stat-green: var(--stat-green);
+  --color-stat-green-soft: var(--stat-green-soft);
+  --color-stat-orange: var(--stat-orange);
+  --color-stat-orange-soft: var(--stat-orange-soft);
+  --color-stat-violet: var(--stat-violet);
+  --color-stat-violet-soft: var(--stat-violet-soft);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -82,6 +90,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* 통계 카드 accent 4색: 숫자·아이콘 색과 아이콘 타일 배경. 숫자 색은 흰 카드 위에서 큰 글자 대비 3:1 이상 */
+  --stat-blue: var(--primary);
+  --stat-blue-soft: var(--accent);
+  --stat-green: oklch(0.596 0.145 163.225);
+  --stat-green-soft: oklch(0.979 0.021 166.113);
+  --stat-orange: oklch(0.646 0.222 41.116);
+  --stat-orange-soft: oklch(0.98 0.016 73.684);
+  --stat-violet: oklch(0.541 0.281 293.009);
+  --stat-violet-soft: oklch(0.969 0.016 293.756);
 }
 
 .dark {

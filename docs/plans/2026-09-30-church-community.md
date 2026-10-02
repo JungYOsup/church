@@ -140,3 +140,4 @@ src/components/
 - 2026-10-01: create-next-app이 만드는 `AGENTS.md`를 채택. Next.js는 설치된 버전의 문서(`node_modules/next/dist/docs/`)를 기준으로 함
 - 2026-10-01: 히어로 배경을 서울 한강·도심 사진으로 정함 (Daryan Shamkhali, Unsplash License, https://unsplash.com/photos/vpk8V_O5-Xk). 교회 건물 사진 후보는 구도가 넓은 배너에 맞지 않았음. 인용구는 목업 문구 대신 개역개정 히브리서 10:24 본문을 사용
 - 2026-10-01: shadcn/ui 4.21은 `clsx`+`tailwind-merge` 대신 shadcn이 배포하는 `cn` 패키지를 설치함. 스타일 프리셋은 `radix-nova`
+- 2026-10-02: 홈 통계 카드 4개를 추가함 ([세부 계획](2026-10-02-stat-cards.md)). 카드 전체가 링크이고 아이콘과 글을 가로로 놓는 구조라, shadcn Card를 설치하지 않고 `Link`에 카드 스타일을 직접 줌. Card는 세로 구조 카드가 필요한 섹션(추천 교회 등)에서 설치함

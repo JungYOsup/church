@@ -16,6 +16,14 @@
 - **원인:** 허용 목록(`.git`, `.claude`, `docs` 등) 밖의 파일(`CLAUDE.md`, `README.md`, `.harness/`, `.nvmrc`)이 있으면 충돌로 보고 멈춘다.
 - **대응:** 임시 폴더에 만든 뒤 필요한 파일만 복사했다 ([세팅 계획](plans/2026-10-01-setup-header-hero.md)).
 
+### TS 데이터 함수는 jiti로 바로 실행해 볼 수 있다
+- **상황:** 데이터 계층 task(`getStats()`)는 화면이 없어 lint·build 말고는 동작을 확인할 거리가 없어 보였다.
+- **대응:** eslint·tailwind가 설치해 둔 jiti(`node_modules/.bin/jiti`)로 임시 스크립트를 실행해 반환값을 출력했다. 새 의존성은 필요 없다.
+- **함정:** `@/` 경로 별칭은 `JITI_ALIAS='{"@":"<프로젝트>/src"}'`처럼 접두어 꼴로 준다. tsconfig처럼 `{"@/*":"…/src/*"}`로 주면 `Cannot find module '@/lib/data/stats'`가 난다([통계 카드 계획](plans/2026-10-02-stat-cards.md)).
+
+### 참고 이미지는 Read 도구로 읽는다
+- `~/Downloads`의 참고 이미지는 Bash에서는 sandbox 때문에 `Operation not permitted`가 나지만, Read 도구로는 열린다. 디자인을 비교할 때는 Read로 이미지를 직접 본다.
+
 ### macOS 셸에서 생기는 사소한 차이
 - zsh에서 `echo =====`는 `=` 확장 때문에 오류가 난다. 구분선은 따옴표로 감싼다.
 - macOS에는 `timeout` 명령이 없다. 시간 제한이 필요하면 도구 쪽 타임아웃을 쓴다.
@@ -39,6 +47,10 @@
 
 - **그라데이션:** `bg-gradient-*`는 `bg-linear-*`로 이름이 바뀌었다. 정지점 위치는 `from-25%`처럼 쓴다.
 - **한국어 줄바꿈:** 좁은 화면에서 "연결되/는"처럼 단어 중간이 끊긴다. 본문 블록에 `break-keep`(word-break: keep-all)을 준다.
+- **나란히 놓인 카드는 위쪽 정렬:** 설명 길이가 카드마다 달라 한 카드만 두 줄로 꺾이면, 카드 내용을 세로 가운데 정렬(`items-center`)했을 때 이름·숫자 높이가 카드마다 어긋난다. `items-start`로 위쪽을 맞춘다(통계 카드).
+- **포커스 테두리는 `outline-hidden`:** v4의 `outline-none`은 outline을 아예 없앤다. 강제 색 모드(Windows 고대비)에서는 포커스 ring(box-shadow)도 그려지지 않아 포커스가 보이지 않는다. 직접 만든 포커스 스타일에는 `outline-hidden`을 쓴다(통계 카드 리뷰에서 발견).
+- **목록 스타일을 지운 `ul`에는 `role="list"`:** preflight가 `list-style: none`을 주면 Safari VoiceOver가 목록으로 읽지 않는다.
+- **연한 accent 색은 대비를 잰다:** `orange-500` 글자는 흰 배경에서 2.89:1로 큰 글자 기준(3:1)에도 못 미쳤다. -600(3.58:1)을 썼다. 색 토큰을 정할 때 흰 카드 위 대비를 함께 확인한다.
 - **폰트 변수 이름:** shadcn이 만든 `globals.css`의 `--font-sans: var(--font-sans)`는 자기 참조다. `next/font`의 변수는 `--font-pretendard`처럼 다른 이름으로 만들고 `--font-sans`에서 가져다 쓴다.
 - **shadcn 4.21:**
   - `clsx`와 `tailwind-merge` 대신 shadcn이 배포하는 `cn` 패키지를 설치한다(이상한 패키지가 아니다).

@@ -17,7 +17,7 @@
 ```
 src/app/                  라우트. 홈만 구현했고 map, events, notices, community, admin은 ComingSoon 자리표시 페이지
 src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
-src/components/home/      홈 섹션 (HeroBanner)
+src/components/home/      홈 섹션 (HeroBanner, StatCards)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (ComingSoon)
 src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
 src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
