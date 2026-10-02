@@ -89,6 +89,16 @@
 - 같은 이벤트의 hook들은 함께 실행되고, `stop_hook_active`는 어느 hook이 막았든 `true`가 된다. hook마다 "이 상태로 이미 요청했는지"를 상태 파일로 따로 판단한다.
 - 질문만 하는 턴까지 느려지지 않도록, 변경 내용의 지문(`git diff HEAD` + 새 파일 해시)을 저장해 두고 바뀌었을 때만 실행한다.
 
+### PreToolUse hook을 만들 때
+- `Edit|Write` matcher는 Bash로 쓴 파일(`echo >`, `sed -i`)을 보지 못한다. 테스트 먼저 hook(`require-test-first.sh`)은 그래서 같은 대상 규칙을 `--check` 모드로 열어 두고, Stop hook이 응답 끝에 바뀐 파일을 한 번 더 확인한다. 대상 규칙을 스크립트 하나에 두어야 두 hook이 어긋나지 않는다.
+- `.claude/settings.json`에 PreToolUse를 더하자 세션을 다시 시작하지 않아도 바로 반영됐다. 다음 Edit가 실제로 막혔다.
+- 시험은 hook에 PreToolUse JSON(`tool_input.file_path`)을 stdin으로 넣고 종료 코드를 비교하는 스크립트로 한다. 진짜 차단 여부는 Edit 도구로 한 번 시도해 본다.
+
+### 셸 문자열에서 변수 뒤에 한글이 붙을 때
+- **상황:** `echo "… $DOD가 통과하지 않았습니다"`가 `DOD�: unbound variable`로 실패했다(`set -u`).
+- **원인:** bash가 변수 이름 뒤에 붙은 한글의 바이트 일부까지 이름으로 읽었다.
+- **대응:** 변수 뒤에 글자가 바로 붙으면 `${DOD}가`처럼 중괄호로 감싼다.
+
 ### husky hook 시험
 - husky는 hook을 `sh -e`로 실행하므로 같은 방식(`.husky/_/pre-commit`)으로 시험한다.
 - 임시 index 파일(`GIT_INDEX_FILE`)을 쓰면 진짜 staging 영역을 건드리지 않고 "이 파일만 커밋하면" 상황을 흉내 낼 수 있다.

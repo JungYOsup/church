@@ -40,10 +40,12 @@ docs/plans/               계획서와 결정 기록
 - `npm run dev` — 개발 서버 (http://localhost:3000)
 - `npm run lint` — ESLint
 - `npm run build` — 프로덕션 빌드 + 타입 체크
-- `npm run test` — Playwright 동작 테스트. 빌드 후 3100 포트에 서버를 띄워 실행한다 (개발 서버와 같이 켜도 됨, 약 15초)
+- `npm run test` — 단위 테스트(`test:unit`) 다음에 Playwright 동작 테스트(`test:e2e`). e2e는 빌드 후 3100 포트에 서버를 띄워 실행한다 (개발 서버와 같이 켜도 됨, 약 20초)
+- `npm run test:unit` — Vitest 단위 테스트(`src/**/*.test.ts`)만. 1초 안팎
 
 ## Rules
 - 코드나 설정을 바꾸는 요청은 먼저 `spec-check` 스킬(`.claude/skills/spec-check/`)로 영향 범위를 찾고 작음·중간·큼으로 판정한다. 작음은 바로 수정, 중간은 짧은 계획을 확인받고 진행한다. 큼은 `plan-work` 스킬로 plan mode에서 계획하고 확인 가능한 task로 나눠 승인받은 뒤, `run-plan` 스킬로 앞 task가 동작함을 확인하며 하나씩 구현한다(실패하면 고쳐서 통과시킨 뒤 다음 task). 모호한 요구사항은 먼저 질문한다.
+- 테스트를 먼저 쓰고 실패(red)를 본 뒤 구현한다. `src/lib`의 순수 로직(테스트·`types.ts`·`utils.ts`·`mock/`·`data/` 제외)은 짝 `<이름>.test.ts` 없이 쓰면 PreToolUse hook(`.claude/hooks/require-test-first.sh`)이 막는다. 계획서의 task마다 "테스트 먼저(red)"를 적고 red 출력을 증거로 남긴다.
 - 승인된 계획은 `docs/plans/YYYY-MM-DD-<주제>.md`로 남긴다. 기존 계획이 바뀌면 그 문서의 `## 변경 이력`에 날짜와 이유를 적는다.
 - 컴포넌트는 `src/lib/mock/`이나 Supabase 클라이언트를 직접 import하지 않고, 항상 `src/lib/data/` 함수를 거친다.
 - 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없으면 지도 자리에 대체 화면을 보여준다.
@@ -54,7 +56,7 @@ docs/plans/               계획서와 결정 기록
 - [하네스 지도](https://claude.ai/artifact/925V77bde8aKNrdrCgXHke)는 하네스 파일이나 커밋이 바뀌면 Stop hook(`.claude/hooks/sync-harness-map.sh`)이 갱신을 요청한다. 점수는 진단 결과가 바뀔 때만 고친다.
 
 ## Definition of Done
-- `npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
+- `npm run test:unit && npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 바뀐 로직 파일의 짝 테스트 확인과 함께 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
 - `npm run test` 통과. 커밋할 때 git pre-commit hook(`.husky/pre-commit`)이 `npm run lint && npm run test`를 자동 실행하고, 실패하면 커밋이 거부된다(문서만 바뀐 커밋은 건너뜀). 실패하면 고친 뒤 새 커밋을 만들고 `--no-verify`로 우회하지 않는다. 새 화면 동작을 만들면 `e2e/`에 테스트를 함께 추가한다.
 - 보이는 모습(색·간격·디자인)은 `npm run dev`로 띄워 375px / 768px / 1440px 폭에서 직접 확인한다.
 - 계획과 달라진 점을 계획서 변경 이력에 적었다.
