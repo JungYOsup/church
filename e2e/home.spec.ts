@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 test.describe("홈 레이아웃", () => {
@@ -232,4 +233,74 @@ test.describe("홈 두 번째 행 배치", () => {
       expect(tops.filter((top) => top === tops[0])).toHaveLength(cardsPerRow);
     });
   }
+});
+
+// 홈 세 번째 행 명세. 목데이터(src/lib/mock/events.ts 등)를 가져오지 않고 직접 적는다.
+// 행사 날짜는 빌드 시각 기준 상대값이라 꼴만 확인한다. 날짜 계산은 단위 테스트(src/lib/datetime.test.ts)가 맡는다.
+const UPCOMING_EVENTS = [
+  { title: "청년 연합 찬양집회", church: "서연교회", tags: ["찬양", "청년", "연합행사"] },
+  { title: "지역사회 연합 봉사활동", church: "한강교회", tags: ["봉사", "지역섬김", "연합"] },
+  { title: "다음세대 말씀 집회", church: "드림교회", tags: ["말씀", "다음세대", "집회"] },
+  { title: "가정 행복 세미나", church: "은혜교회", tags: ["가정사역", "세미나"] },
+  { title: "연합 성가대 발표회", church: "샘물교회", tags: ["찬양", "연합"] },
+  { title: "선교 나눔 바자회", church: "서울교회", tags: ["선교", "나눔"] },
+];
+// 지난 행사 두 개와, 다가오지만 일곱 번째라 홈에 들어가지 않는 행사
+const HIDDEN_EVENTS = ["지역 연합 기도회", "새가족 환영 모임", "청소년 체육대회"];
+const EVENT_DATE_TIME = /^\d{4}\. \d{1,2}\. \d{1,2} \([일월화수목금토]\) 오[전후] \d{1,2}:\d{2}$/;
+
+test.describe("홈 다가오는 행사", () => {
+  const eventCards = (page: Page) =>
+    page
+      .getByRole("region", { name: "다가오는 행사", exact: true })
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { level: 3 }) });
+
+  test("다가오는 행사 6개를 날짜순으로 교회, 일시, 태그와 함께 보여 준다", async ({ page }) => {
+    await page.goto("/");
+    const cards = eventCards(page);
+    await expect(cards).toHaveCount(UPCOMING_EVENTS.length);
+    for (const [index, { title, church, tags }] of UPCOMING_EVENTS.entries()) {
+      const card = cards.nth(index);
+      await expect(card.getByRole("heading", { level: 3 })).toHaveText(title);
+      await expect(card).toContainText(church);
+      await expect(card.locator("time")).toHaveText(EVENT_DATE_TIME);
+      await expect(card.getByRole("list").getByRole("listitem")).toHaveText(tags);
+    }
+  });
+
+  test("지난 행사와 일곱 번째 이후 행사는 보이지 않는다", async ({ page }) => {
+    await page.goto("/");
+    // 칸이 그려진 뒤에 확인해야, 칸이 아예 없어서 통과하는 일을 막는다
+    await expect(eventCards(page)).toHaveCount(UPCOMING_EVENTS.length);
+    const region = page.getByRole("region", { name: "다가오는 행사", exact: true });
+    for (const title of HIDDEN_EVENTS) {
+      await expect(region.getByText(title, { exact: true })).toHaveCount(0);
+    }
+  });
+
+  test("'더보기'를 누르면 행사 페이지로 이동한다", async ({ page }) => {
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "다가오는 행사", exact: true });
+    await region.getByRole("link", { name: "더보기" }).click();
+    await expect(page).toHaveURL("/events");
+  });
+
+  test("1440px에서 '다음 행사'를 누르면 목록이 끝까지 넘어가고 버튼 상태가 바뀐다", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "다가오는 행사", exact: true });
+    const previous = region.getByRole("button", { name: "이전 행사" });
+    const next = region.getByRole("button", { name: "다음 행사" });
+    await expect(previous).toBeDisabled();
+    await expect(next).toBeEnabled();
+
+    const firstCard = eventCards(page).first();
+    const startX = (await firstCard.boundingBox())!.x;
+    await next.click();
+    await expect.poll(async () => (await firstCard.boundingBox())!.x).toBeLessThan(startX);
+    // 한 번에 세 장씩 넘어가서 여섯 장이면 한 번에 끝에 닿는다
+    await expect(next).toBeDisabled();
+    await expect(previous).toBeEnabled();
+  });
 });

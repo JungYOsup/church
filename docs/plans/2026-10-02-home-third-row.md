@@ -258,7 +258,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - 개발 서버가 새 코드를 내보냈는지도 확인했습니다. `SectionCard`에 `data-probe`를 잠깐 넣자 `curl /`에 2번 나왔고, 바로 되돌렸습니다.
     - `npm run test` → `Tests 35 passed (35)`(단위), `35 passed (20.1s)`(e2e). lint 종료 코드 0
     - `grep -rn "tagToneClassName" src` → `src/components/common/TagList.tsx` 11·22행만
-- [ ] **T6. 다가오는 행사 섹션**
+- [x] **T6. 다가오는 행사 섹션**
   - 파일: `e2e/home.spec.ts`, `src/components/event/EventCard.tsx`, `src/components/common/HorizontalScroller.tsx`, `src/components/home/UpcomingEvents.tsx`, `src/app/page.tsx`(두 번째 행 아래에 임시로 전체 폭)
   - 의존: T4, T5
   - 테스트 먼저(red): `e2e/home.spec.ts`에 "홈 다가오는 행사" describe를 먼저 씁니다.
@@ -272,6 +272,19 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - 일부러 깨뜨려 봅니다(확인 후 되돌림): 목데이터의 "가정 행복 세미나"를 +16일로 옮기면 순서 테스트만 실패합니다.
     - 개발 서버 375/768/1440px 스크린샷을 참고 이미지의 행사 칸과 비교합니다.
     - 행사 태그 대비가 4.5:1 이상입니다.
+  - 증거:
+    - red: `npm run test:e2e -- -g "다가오는 행사"` → `4 failed`(칸이 없어 `toHaveCount`·`element(s) not found`·`locator.click: Timeout`)
+    - green: 같은 명령 → `4 passed (10.5s)`. `npm run test` → 단위 `35 passed`, e2e `39 passed (18.5s)`(기존 35 + 새 4). 기존 "가로 스크롤이 생기지 않는다" 3개도 통과했습니다.
+    - 깨뜨려 보기: "가정 행복 세미나"를 +9일에서 +16일로 옮기자 "다가오는 행사 6개를 날짜순으로 …"만 실패했습니다(`Expected: "가정 행복 세미나"`, `Received: "연합 성가대 발표회"` → `1 failed, 38 passed`). 되돌린 뒤 `git diff` 없음
+    - `check-t6.mjs`(개발 서버 3000):
+      - 375: 카드 233px, 한 번에 1장과 다음 카드가 엿보임, 버튼 숨김
+      - 768: 227px 3장, 버튼 `이전 행사(disabled)`·`다음 행사`
+      - 1280: 392px 3장
+      - 1440: 445px 3장
+      - 네 폭 모두 카드 안 넘침 false, 페이지 가로 넘침 false, 콘솔 오류 none, 태그 대비 최소 5.09
+      - 첫 카드: `2026. 10. 4 (일) 오후 7:00`, 배지 `10.4(일)`
+    - 처음 측정에서 태그 대비가 1.04로 나왔습니다. 스크립트가 Chrome이 돌려주는 `oklch(...)`를 RGB로 읽은 탓이라, canvas로 RGB로 바꿔 다시 쟀습니다(코드 문제 아님).
+    - 스크린샷 비교(375·768·1440): 참고 이미지의 행사 칸과 같은 구성입니다. 사진 왼쪽 위 흰 날짜 배지, 굵은 제목, 핀·교회, 시계·일시, 파스텔 태그, 오른쪽 ">" 버튼이 있습니다. 지금은 임시 전체 폭이라 카드가 넓고, 세 칸 배치는 T8에서 합니다.
 - [ ] **T7. 공지·글 데이터 계층**
   - 파일: `src/lib/types.ts`, `src/lib/mock/notices.ts`, `src/lib/mock/posts.ts`, `src/lib/data/notices.ts`, `src/lib/data/posts.ts`
   - 의존: T1, T2, T4

@@ -3,6 +3,7 @@ import { MapPreview } from "@/components/home/MapPreview";
 import { RecommendedChurches } from "@/components/home/RecommendedChurches";
 import { RepRegisterCta } from "@/components/home/RepRegisterCta";
 import { StatCards } from "@/components/home/StatCards";
+import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 
 export default function HomePage() {
   return (
@@ -16,6 +17,7 @@ export default function HomePage() {
         <RecommendedChurches />
         <RepRegisterCta />
       </div>
+      <UpcomingEvents />
     </div>
   );
 }
