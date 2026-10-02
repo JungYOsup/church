@@ -41,3 +41,20 @@ export interface Church {
   imageUrl: string;
   tags: string[];
 }
+
+/** 행사·공지·글 목록에 함께 보여 줄 교회 정보 */
+export type ChurchSummary = Pick<Church, "id" | "name" | "imageUrl">;
+
+/** 화면에 교회 정보를 붙여 보여 줄 때의 꼴. Supabase 단계에서는 쿼리의 join 결과다 */
+export type WithChurch<T> = T & { church: ChurchSummary };
+
+/** 교회가 여는 행사. 브라우저의 Event와 이름이 겹치지 않게 ChurchEvent로 둔다 */
+export interface ChurchEvent {
+  id: string;
+  churchId: string;
+  title: string;
+  /** 시작 시각 (ISO 8601) */
+  startsAt: string;
+  imageUrl: string;
+  tags: string[];
+}

@@ -227,7 +227,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - `prayer.jpg` Dallas Penner, https://unsplash.com/photos/NsQZkWRUwcs
       - `gathering.jpg` Nicolas Lobos, https://unsplash.com/photos/qbazkeo-R1o
       - `choir.jpg` Olek Buzunov, https://unsplash.com/photos/B-moLesnWhY
-- [ ] **T4. 행사 데이터 계층**
+- [x] **T4. 행사 데이터 계층**
   - 파일: `src/lib/types.ts`, `src/lib/mock/events.ts`, `src/lib/data/events.ts`, `src/lib/data/churches.ts`(`withChurch`)
   - 의존: T1, T2, T3
   - 테스트 먼저(red): 해당 없음 — 목데이터를 T1의 `pickUpcoming()`과 T2의 `atSeoulTime()`에 넘기기만 합니다. 고르고 계산하는 판단은 T1·T2가 테스트합니다.
@@ -238,6 +238,12 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - 모든 `imageUrl` 파일이 실제로 있습니다.
       - `formatEventDateTime`으로 찍은 첫 행사가 "오늘+2일 (요일) 오후 7:00"입니다.
     - `npm run lint && npm run build` 통과
+  - 증거: `check-t4.ts`(jiti, 서울 기준 2026. 10. 2 (금) 오후 4:37에 실행)
+    - `count 6`, `titles 청년 연합 찬양집회, 지역사회 연합 봉사활동, 다음세대 말씀 집회, 가정 행복 세미나, 연합 성가대 발표회, 선교 나눔 바자회`
+    - `allFuture true`, `churches 서연교회, 한강교회, 드림교회, 은혜교회, 샘물교회, 서울교회`
+    - `mockCount 10 uniqueIds true`, `missingImages none`
+    - `first 2026. 10. 4 (일) 오후 7:00`(오늘 +2일, 기대값과 같음)
+    - lint 종료 코드 0, build `✓ Compiled successfully in 1146ms`
 - [ ] **T5. 섹션 머리 공통 컴포넌트와 태그 목록 (리팩터링)**
   - 파일: `src/components/home/SectionCard.tsx`, `src/components/common/TagList.tsx`, `src/components/home/MapPreview.tsx`, `src/components/home/RecommendedChurches.tsx`, `src/components/church/ChurchCard.tsx`
   - 의존: 없음
