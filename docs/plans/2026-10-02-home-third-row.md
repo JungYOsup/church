@@ -244,7 +244,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - `mockCount 10 uniqueIds true`, `missingImages none`
     - `first 2026. 10. 4 (일) 오후 7:00`(오늘 +2일, 기대값과 같음)
     - lint 종료 코드 0, build `✓ Compiled successfully in 1146ms`
-- [ ] **T5. 섹션 머리 공통 컴포넌트와 태그 목록 (리팩터링)**
+- [x] **T5. 섹션 머리 공통 컴포넌트와 태그 목록 (리팩터링)**
   - 파일: `src/components/home/SectionCard.tsx`, `src/components/common/TagList.tsx`, `src/components/home/MapPreview.tsx`, `src/components/home/RecommendedChurches.tsx`, `src/components/church/ChurchCard.tsx`
   - 의존: 없음
   - 테스트 먼저(red): 해당 없음 — 보이는 모습과 동작이 같아야 하는 리팩터링이라, 기존 e2e 35개(칸 이름, 링크, 태그 순서, 배치)가 안전망입니다.
@@ -252,6 +252,12 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - 고치기 전과 뒤에 `npm run test` → 35개가 모두 통과합니다.
     - 개발 서버에서 1440·375px 두 번째 행의 스크린샷을 고치기 전과 비교해, 다른 점이 없습니다.
     - `grep -n "tagToneClassName" src -r`가 `TagList.tsx`에만 나옵니다.
+  - 증거:
+    - 고치기 전: T4 커밋의 pre-commit에서 `35 passed (16.0s)`. 개발 서버(3000)에서 지도·추천 칸을 375·1440px로 찍었습니다(콘솔 오류 none).
+    - 고친 뒤: 같은 스크립트로 다시 찍어 `cmp`로 비교했습니다. `375-map`, `375-rec`, `1440-map`, `1440-rec` 모두 `identical`(바이트까지 같음)
+    - 개발 서버가 새 코드를 내보냈는지도 확인했습니다. `SectionCard`에 `data-probe`를 잠깐 넣자 `curl /`에 2번 나왔고, 바로 되돌렸습니다.
+    - `npm run test` → `Tests 35 passed (35)`(단위), `35 passed (20.1s)`(e2e). lint 종료 코드 0
+    - `grep -rn "tagToneClassName" src` → `src/components/common/TagList.tsx` 11·22행만
 - [ ] **T6. 다가오는 행사 섹션**
   - 파일: `e2e/home.spec.ts`, `src/components/event/EventCard.tsx`, `src/components/common/HorizontalScroller.tsx`, `src/components/home/UpcomingEvents.tsx`, `src/app/page.tsx`(두 번째 행 아래에 임시로 전체 폭)
   - 의존: T4, T5
