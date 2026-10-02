@@ -303,6 +303,18 @@ test.describe("홈 다가오는 행사", () => {
     await expect(next).toBeDisabled();
     await expect(previous).toBeEnabled();
   });
+
+  test("키보드로 '다음 행사'를 눌러 끝에 닿으면 포커스가 '이전 행사'로 옮겨 간다", async ({ page }) => {
+    // 누른 버튼이 끝에서 꺼지면 브라우저가 포커스를 body로 보내, 키보드 사용자가 자리를 잃는다
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "다가오는 행사", exact: true });
+    const next = region.getByRole("button", { name: "다음 행사" });
+    await next.focus();
+    await page.keyboard.press("Enter");
+    await expect(next).toBeDisabled();
+    await expect(region.getByRole("button", { name: "이전 행사" })).toBeFocused();
+  });
 });
 
 const RECENT_NOTICES = [

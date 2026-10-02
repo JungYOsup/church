@@ -39,8 +39,25 @@ export function HorizontalScroller({
     };
   }, []);
 
-  const scrollByPage = (direction: 1 | -1) => {
+  const previousRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+  /** 마지막으로 누른 버튼. 그 버튼이 끝에 닿아 꺼질 때 포커스를 옮길지 판단한다 */
+  const pressedRef = useRef<HTMLButtonElement | null>(null);
+
+  // 누른 버튼이 끝에서 꺼지면 브라우저가 포커스를 body로 보내 키보드 사용자가 자리를 잃는다.
+  // 클릭 순간에는 반대쪽 버튼도 꺼져 있을 수 있어서(1440px에서는 한 번에 끝에 닿음),
+  // 버튼 상태가 다시 그려진 뒤 반대쪽 버튼으로 옮긴다.
+  useEffect(() => {
+    const pressed = pressedRef.current;
+    const lostFocus = document.activeElement === pressed || document.activeElement === document.body;
+    if (!pressed?.disabled || !lostFocus) return;
+    (pressed === nextRef.current ? previousRef : nextRef).current?.focus();
+    pressedRef.current = null;
+  }, [edges]);
+
+  const scrollByPage = (button: HTMLButtonElement, direction: 1 | -1) => {
     const list = listRef.current;
+    pressedRef.current = button;
     list?.scrollBy({ left: direction * list.clientWidth, behavior: "smooth" });
   };
 
@@ -62,8 +79,9 @@ export function HorizontalScroller({
         type="button"
         aria-label={`이전 ${itemLabel}`}
         aria-controls={listId}
+        ref={previousRef}
         disabled={edges.atStart}
-        onClick={() => scrollByPage(-1)}
+        onClick={(event) => scrollByPage(event.currentTarget, -1)}
         className={`${buttonClassName} -left-3`}
       >
         <ChevronLeft aria-hidden="true" className="size-5" />
@@ -72,8 +90,9 @@ export function HorizontalScroller({
         type="button"
         aria-label={`다음 ${itemLabel}`}
         aria-controls={listId}
+        ref={nextRef}
         disabled={edges.atEnd}
-        onClick={() => scrollByPage(1)}
+        onClick={(event) => scrollByPage(event.currentTarget, 1)}
         className={`${buttonClassName} -right-3`}
       >
         <ChevronRight aria-hidden="true" className="size-5" />

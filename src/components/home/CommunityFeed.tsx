@@ -17,7 +17,8 @@ const CATEGORY_TONES: Record<PostCategory, string> = {
 
 export async function CommunityFeed() {
   const posts = await getRecentPosts(POST_COUNT);
-  // "N시간 전"은 서버에서 한 번 계산한다. 클라이언트에서 다시 계산하면 시각이 달라 hydration이 어긋난다
+  // "N시간 전"은 서버가 그릴 때 한 번 계산한다. 클라이언트에서 다시 계산하면 시각이 달라 hydration이 어긋난다.
+  // 홈은 정적 페이지라 그리는 시각은 빌드 시각이다(요청마다가 아님). 다시 그리는 주기는 Supabase 단계에서 정한다
   const now = new Date();
 
   return (
