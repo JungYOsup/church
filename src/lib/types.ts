@@ -58,3 +58,28 @@ export interface ChurchEvent {
   imageUrl: string;
   tags: string[];
 }
+
+export type NoticeCategory = "행사안내" | "일정변경" | "모집안내" | "일반공지";
+
+/** 교회가 올린 공지. 목록 썸네일은 그 교회 사진을 쓴다 */
+export interface Notice {
+  id: string;
+  churchId: string;
+  title: string;
+  category: NoticeCategory;
+  /** 게시 시각 (ISO 8601) */
+  publishedAt: string;
+}
+
+export type PostCategory = "기도제목" | "사역나눔" | "선교소식" | "봉사후기";
+
+/** 커뮤니티 글. 교회는 글쓴이가 속한 교회다 */
+export interface Post {
+  id: string;
+  churchId: string;
+  title: string;
+  category: PostCategory;
+  /** 작성 시각 (ISO 8601) */
+  createdAt: string;
+  imageUrl: string;
+}
