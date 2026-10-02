@@ -8,11 +8,12 @@ const EVENT_COUNT = 6;
 // 모바일은 한 장이 칸의 3/4, 640px부터 한 번에 3장, 1280px부터는 세 번째 행의 왼쪽 칸이라 장당 약 200px
 const CARD_IMAGE_SIZES = "(min-width: 1280px) 200px, (min-width: 640px) 33vw, 75vw";
 
-export async function UpcomingEvents() {
+export async function UpcomingEvents({ className }: { className?: string }) {
   const events = await getUpcomingEvents(EVENT_COUNT);
 
   return (
     <SectionCard
+      className={className}
       titleId="upcoming-events-title"
       title="다가오는 행사"
       icon={CalendarDays}

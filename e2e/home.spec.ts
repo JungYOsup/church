@@ -304,3 +304,94 @@ test.describe("홈 다가오는 행사", () => {
     await expect(previous).toBeEnabled();
   });
 });
+
+const RECENT_NOTICES = [
+  { title: "특별새벽기도회에 여러분을 초대합니다", church: "서연교회", category: "행사안내" },
+  { title: "지역 연합 기도회 장소가 변경되었습니다", church: "한강교회", category: "일정변경" },
+  { title: "다음세대 수련회 등록 안내", church: "드림교회", category: "모집안내" },
+  { title: "교회 주차장 이용 안내", church: "은혜교회", category: "일반공지" },
+];
+const NOTICE_DATE = /^\d{4}\. \d{1,2}\. \d{1,2}$/;
+
+const RECENT_POSTS = [
+  { title: "이번 주 지역 전도 활동을 위해 기도해주세요", church: "사랑의교회", category: "기도제목", time: "2시간 전" },
+  { title: "청년부 연합 예배가 은혜 가운데 진행되었습니다!", church: "한강교회", category: "사역나눔", time: "5시간 전" },
+  { title: "선교지 소식과 기도편지를 나눕니다", church: "드림교회", category: "선교소식", time: "1일 전" },
+  { title: "지역 어르신들을 위한 봉사활동 이야기", church: "은혜교회", category: "봉사후기", time: "1일 전" },
+];
+
+test.describe("홈 최근 공지", () => {
+  test("최근 공지 4개를 최신순으로 날짜, 교회, 분류와 함께 보여 준다", async ({ page }) => {
+    await page.goto("/");
+    const items = page.getByRole("region", { name: "최근 공지", exact: true }).getByRole("listitem");
+    await expect(items).toHaveCount(RECENT_NOTICES.length);
+    for (const [index, { title, church, category }] of RECENT_NOTICES.entries()) {
+      const item = items.nth(index);
+      await expect(item).toContainText(title);
+      await expect(item).toContainText(church);
+      await expect(item.locator("time")).toHaveText(NOTICE_DATE);
+      await expect(item.getByText(category, { exact: true })).toBeVisible();
+    }
+  });
+
+  test("'더보기'를 누르면 공지 페이지로 이동한다", async ({ page }) => {
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "최근 공지", exact: true });
+    await region.getByRole("link", { name: "더보기" }).click();
+    await expect(page).toHaveURL("/notices");
+  });
+});
+
+test.describe("홈 커뮤니티 최신 글", () => {
+  test("최신 글 4개를 교회, 지난 시간, 분류와 함께 보여 준다", async ({ page }) => {
+    await page.goto("/");
+    const items = page.getByRole("region", { name: "커뮤니티 최신 글", exact: true }).getByRole("listitem");
+    await expect(items).toHaveCount(RECENT_POSTS.length);
+    for (const [index, { title, church, category, time }] of RECENT_POSTS.entries()) {
+      const item = items.nth(index);
+      await expect(item).toContainText(title);
+      await expect(item).toContainText(church);
+      await expect(item.locator("time")).toHaveText(time);
+      await expect(item.getByText(category, { exact: true })).toBeVisible();
+    }
+  });
+
+  test("'더보기'를 누르면 커뮤니티 페이지로 이동한다", async ({ page }) => {
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "커뮤니티 최신 글", exact: true });
+    await region.getByRole("link", { name: "더보기" }).click();
+    await expect(page).toHaveURL("/community");
+  });
+});
+
+const THIRD_ROW_SECTIONS = ["다가오는 행사", "최근 공지", "커뮤니티 최신 글"];
+
+test.describe("홈 세 번째 행 배치", () => {
+  for (const { width, layout, description } of [
+    { width: 375, layout: "stacked", description: "세 칸이 위아래로 놓인다" },
+    { width: 768, layout: "events-above-pair", description: "행사 아래에 공지와 커뮤니티가 나란히 놓인다" },
+    { width: 1440, layout: "one-row", description: "세 칸이 한 줄에 놓인다" },
+  ] as const) {
+    test(`${width}px 폭에서 ${description}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const boxes = [];
+      for (const name of THIRD_ROW_SECTIONS) {
+        const box = await page.getByRole("region", { name, exact: true }).boundingBox();
+        expect(box, `${name} 칸`).not.toBeNull();
+        boxes.push(box!);
+      }
+      const [events, notices, community] = boxes;
+      if (layout === "stacked") {
+        expect(events.y < notices.y && notices.y < community.y, "위에서부터 행사 → 공지 → 커뮤니티").toBe(true);
+      } else if (layout === "events-above-pair") {
+        expect(events.y < notices.y, "행사가 위").toBe(true);
+        expect(Math.round(notices.y)).toBe(Math.round(community.y));
+        expect(notices.x < community.x, "왼쪽부터 공지 → 커뮤니티").toBe(true);
+      } else {
+        expect([notices.y, community.y].map(Math.round)).toEqual([Math.round(events.y), Math.round(events.y)]);
+        expect(events.x < notices.x && notices.x < community.x, "왼쪽부터 행사 → 공지 → 커뮤니티").toBe(true);
+      }
+    });
+  }
+});

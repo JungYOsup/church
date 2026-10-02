@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Clock, MapPin } from "lucide-react";
 import { TagList } from "@/components/common/TagList";
 import { Card } from "@/components/ui/card";
-import { formatEventBadge, formatEventDateTime } from "@/lib/datetime";
+import { formatEventBadge, formatEventDate, formatTime } from "@/lib/datetime";
 import type { ChurchEvent, WithChurch } from "@/lib/types";
 
 export function EventCard({
@@ -37,7 +37,11 @@ export function EventCard({
         </p>
         <p className="flex items-start gap-1 text-xs text-foreground/80">
           <Clock aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-          <time dateTime={event.startsAt}>{formatEventDateTime(event.startsAt)}</time>
+          {/* 카드가 좁으면 날짜와 시간 사이에서만 줄을 바꾼다("오후 / 7:00"처럼 끊기지 않게) */}
+          <time dateTime={event.startsAt}>
+            <span className="whitespace-nowrap">{formatEventDate(event.startsAt)}</span>{" "}
+            <span className="whitespace-nowrap">{formatTime(event.startsAt)}</span>
+          </time>
         </p>
         <TagList tags={event.tags} />
       </div>

@@ -51,10 +51,21 @@ function seoulParts(iso: string) {
   };
 }
 
+/** "2026. 10. 4 (일)" */
+export function formatEventDate(iso: string): string {
+  const { year, month, day, weekday } = seoulParts(iso);
+  return `${year}. ${month}. ${day} (${weekday})`;
+}
+
+/** "오후 7:00" */
+export function formatTime(iso: string): string {
+  const { dayPeriod, hour, minute } = seoulParts(iso);
+  return `${dayPeriod} ${hour}:${minute}`;
+}
+
 /** "2026. 10. 4 (일) 오후 7:00" */
 export function formatEventDateTime(iso: string): string {
-  const { year, month, day, weekday, dayPeriod, hour, minute } = seoulParts(iso);
-  return `${year}. ${month}. ${day} (${weekday}) ${dayPeriod} ${hour}:${minute}`;
+  return `${formatEventDate(iso)} ${formatTime(iso)}`;
 }
 
 /** 행사 사진 위 날짜 배지: { monthDay: "10.4", weekday: "일" } */

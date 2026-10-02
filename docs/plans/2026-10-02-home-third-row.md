@@ -204,6 +204,10 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - 위에 더해 `process.env.TZ` 줄도 제거(KST에서 실행): 표기 테스트 6개는 다시 통과하고, UTC 확인 테스트만 실패 → `1 failed | 34 passed`. UTC 설정이 없으면 시간대를 빼먹은 코드가 이 컴퓨터에서는 보이지 않는다는 증거이고, 확인 테스트가 그 설정이 빠진 것을 잡습니다.
       - 되돌린 뒤 `35 passed`
     - lint 종료 코드 0, build `✓ Compiled successfully in 1228ms`
+    - 재확인(T8에서 `formatEventDate`·`formatTime`을 더한 뒤 체크를 풀고 다시 확인):
+      - 새 테스트 2개를 먼저 쓰고 stub으로 red → `2 failed | 35 passed (37)`
+      - `formatEventDateTime`을 두 함수의 조합으로 바꾸고 green → `37 passed (37)`
+      - `timeZone` 제거 → `7 failed | 30 passed`(기존 6 + 새 1). 되돌린 뒤 `37 passed`
     - 테스트 이름: 처음 쓴 상대 시간 테스트는 `%s → %s`에 기대값 대신 입력 시각이 찍혀서, green 전에 인자 순서를 바꿔 "2시간 전 → 2시간 전"처럼 읽히게 했습니다.
 - [x] **T3. 행사 사진 6장 준비**
   - 파일: `public/images/events/*.jpg` (6개)
@@ -258,6 +262,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - 개발 서버가 새 코드를 내보냈는지도 확인했습니다. `SectionCard`에 `data-probe`를 잠깐 넣자 `curl /`에 2번 나왔고, 바로 되돌렸습니다.
     - `npm run test` → `Tests 35 passed (35)`(단위), `35 passed (20.1s)`(e2e). lint 종료 코드 0
     - `grep -rn "tagToneClassName" src` → `src/components/common/TagList.tsx` 11·22행만
+    - 재확인(T8에서 `SectionCard`에 `className`을 더한 뒤 체크를 풀고 다시 확인): 두 번째 행 4장이 처음 찍은 것과 `cmp`로 모두 `identical`, 콘솔 오류 none. `npm run test` → e2e `46 passed (23.9s)`
 - [x] **T6. 다가오는 행사 섹션**
   - 파일: `e2e/home.spec.ts`, `src/components/event/EventCard.tsx`, `src/components/common/HorizontalScroller.tsx`, `src/components/home/UpcomingEvents.tsx`, `src/app/page.tsx`(두 번째 행 아래에 임시로 전체 폭)
   - 의존: T4, T5
@@ -285,6 +290,9 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - 첫 카드: `2026. 10. 4 (일) 오후 7:00`, 배지 `10.4(일)`
     - 처음 측정에서 태그 대비가 1.04로 나왔습니다. 스크립트가 Chrome이 돌려주는 `oklch(...)`를 RGB로 읽은 탓이라, canvas로 RGB로 바꿔 다시 쟀습니다(코드 문제 아님).
     - 스크린샷 비교(375·768·1440): 참고 이미지의 행사 칸과 같은 구성입니다. 사진 왼쪽 위 흰 날짜 배지, 굵은 제목, 핀·교회, 시계·일시, 파스텔 태그, 오른쪽 ">" 버튼이 있습니다. 지금은 임시 전체 폭이라 카드가 넓고, 세 칸 배치는 T8에서 합니다.
+    - 재확인(T8에서 `UpcomingEvents`에 `className`을, `EventCard` 일시에 줄바꿈 묶음을 더한 뒤 체크를 풀고 다시 확인):
+      - `check-t6.mjs` 결과: 375 카드 233·1장(버튼 숨김), 768 227·3장, 1280 158·3장, 1440 182·3장. 네 폭 모두 카드 안 넘침 false, 페이지 넘침 false, 콘솔 오류 none, 태그 대비 5.09, 일시 `2026. 10. 4 (일) 오후 7:00`
+      - `npm run test` → e2e `46 passed (24.6s)`. 새 행사 테스트 4개도 그 안에 있습니다.
 - [x] **T7. 공지·글 데이터 계층**
   - 파일: `src/lib/types.ts`, `src/lib/mock/notices.ts`, `src/lib/mock/posts.ts`, `src/lib/data/notices.ts`, `src/lib/data/posts.ts`
   - 의존: T1, T2, T4
@@ -302,7 +310,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - `relative 2시간 전, 5시간 전, 1일 전, 1일 전`. 처음에는 `1시간 전, 4시간 전, 1일 전, 1일 전`이었습니다(변경 이력 참고).
     - `counts 8 8 uniqueIds true`, `missingThumbs none`
     - lint 종료 코드 0, build `✓ Compiled successfully in 1446ms`
-- [ ] **T8. 최근 공지·커뮤니티 섹션과 세 칸 배치**
+- [x] **T8. 최근 공지·커뮤니티 섹션과 세 칸 배치**
   - 파일: `e2e/home.spec.ts`, `src/components/home/RecentNotices.tsx`, `src/components/home/CommunityFeed.tsx`, `src/app/globals.css`(분류 색 토큰), `src/app/page.tsx`
   - 의존: T6, T7
   - 테스트 먼저(red): `e2e/home.spec.ts`에 테스트를 먼저 씁니다.
@@ -317,6 +325,24 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - `pickLatest` 대신 목데이터 순서를 그대로 쓰면 공지 순서 테스트만 실패합니다.
       - `xl:grid-cols-[…]`를 지우면 1440 배치 테스트만 실패합니다.
     - 개발 서버 375/768/1280/1440px에서 넘침(`scrollWidth <= clientWidth`), 가로 스크롤, 콘솔 오류가 없습니다. 1440 스크린샷을 참고 이미지의 세 번째 행과 비교합니다.
+  - 증거:
+    - red: `npm run test:e2e -- -g "최근 공지|커뮤니티 최신 글|세 번째 행"` → `7 failed`(칸이 없어 `toHaveCount` 등)
+    - green: `npm run test` → 단위 `37 passed`, e2e `46 passed (24.6s)`(39 + 새 7). lint 종료 코드 0
+    - 깨뜨려 보기(각각 되돌리고 `cmp`로 원래 파일과 같음을 확인):
+      - 공지에서 `pickLatest`를 빼고 목데이터 순서 그대로: "최근 공지 4개를 최신순으로 …"만 실패 → `1 failed, 45 passed`
+      - `xl:grid-cols-[minmax(0,1.6fr)_…]` 삭제: "1440px 폭에서 세 칸이 한 줄에 놓인다"만 실패 → `1 failed, 45 passed`
+    - `check-t8.mjs`(개발 서버 3000). 칸 위치는 x,y,폭,높이입니다.
+      - 375: 행사 16,275 → 공지 16,641 → 커뮤니티 16,985로 위아래
+      - 768: 행사 736 폭 위, 공지 16,639와 커뮤니티 392,639가 나란히
+      - 1280: 530 / 331 / 331, 같은 y
+      - 1440: 601 / 376 / 376, 같은 y
+      - 네 폭 모두 줄 넘침(`li.scrollWidth > clientWidth`) false, 썸네일 4/4, 페이지 가로 넘침 false, 콘솔 오류 none
+      - 제목이 길면 말줄임으로 자릅니다(1440에서 공지 2개, 글 3개).
+    - 분류 배지 대비(1440): 행사안내 6.28, 일정변경 6.65, 모집안내 5.09, 일반공지 6.87, 기도제목 5.49, 사역나눔 6.28, 선교소식 5.09, 봉사후기 4.92. 모두 4.5 이상입니다.
+    - 1280px에서 행사 카드(158px)의 일시가 "…(일) 오후 / 7:00"처럼 시간 중간에서 끊겼습니다. 날짜와 시간을 줄바꿈 없는 두 묶음으로 나눠, "2026. 10. 4 (일) / 오후 7:00"으로 끊기게 고쳤습니다(변경 이력 참고).
+    - 1440 스크린샷을 참고 이미지와 비교했습니다. 같은 구성입니다: 행사 카드 3장과 ">" 버튼, 공지 4줄(교회 사진 썸네일·날짜·교회·분류 배지), 글 4줄(행사 사진 썸네일·교회·지난 시간·분류 배지), 비율 약 44 : 28 : 28. 다른 점은 다음과 같습니다.
+      - 설명이 제목 옆이 아니라 아래 줄에 있습니다(두 번째 행과 같은 `SectionCard` 구조).
+      - 공지의 종 아이콘이 주황이 아니라 다른 칸과 같은 파랑입니다.
 - [ ] **T9. 문서 반영**
   - 파일: `CLAUDE.md`, `docs/plans/2026-09-30-church-community.md`, `docs/lessons.md`
   - 의존: T8
@@ -376,6 +402,11 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
   - 이유: 확인 스크립트가 `now`를 데이터 함수보다 몇 ms 먼저 만들자 정확히 2시간 전인 글이 "1시간 전"으로 내려갔습니다.
   - 화면도 렌더 시각과 데이터 시각이 다를 수 있어서, 단위가 바뀌는 경계에서 비켜 두었습니다. 그 뒤 같은 스크립트(`now`를 먼저 만드는 순서 그대로)에서 계획한 표기가 나왔습니다.
   - 필드 이름도 `hoursAgo`에서 `minutesAgo`로 바꿨습니다.
+- 2026-10-02 (T8): 계획의 파일 목록 밖에서 네 가지를 더했습니다. 앞 task의 코드를 건드린 것은 그 task의 체크를 풀고 다시 확인했습니다.
+  - **`home/FeedRow.tsx` 추가:** 공지와 글의 한 줄(썸네일·제목·메타·배지)이 같은 모양이라 함께 쓰는 컴포넌트로 만들었습니다.
+  - **`SectionCard`·`UpcomingEvents`에 `className`:** 768~1279px에서 행사 칸을 두 칸 폭(`md:col-span-2`)으로 두려고 section에 클래스를 넘기게 했습니다. T5·T6을 다시 확인했습니다.
+  - **`formatEventDate`·`formatTime` 추가(T2):** 1280px 행사 카드에서 일시가 "오후 / 7:00"으로 끊겨, 날짜와 시간을 따로 줄바꿈 없이 묶었습니다. 테스트 2개를 먼저 써서 red를 본 뒤 구현했고, `formatEventDateTime`은 두 함수의 조합이 되었습니다. T2를 다시 확인했습니다.
+  - **1280px는 그대로 둠:** 리스크 절의 대응(비율이나 한 번에 보이는 카드 수 조정)은 쓰지 않았습니다. 일시 줄바꿈을 고친 뒤에는 카드 안 넘침이 없고 읽기에 무리가 없었기 때문입니다. 1440px의 "다음 행사" 테스트(세 장씩 넘김)도 그대로 유지됩니다.
 
 ## 검증 결과
 <!-- run-plan이 마무리 검증의 실제 출력 근거를 적는다. 리뷰에서 반영하지 않은 지적은 이유와 함께 적는다 -->

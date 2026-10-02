@@ -3,8 +3,10 @@ import {
   atSeoulTime,
   formatDate,
   formatEventBadge,
+  formatEventDate,
   formatEventDateTime,
   formatRelativeTime,
+  formatTime,
 } from "@/lib/datetime";
 
 const MINUTE = 60_000;
@@ -41,6 +43,19 @@ describe("formatEventDateTime", () => {
     ["서울은 다음 날인 시각", "2026-10-04T16:00:00.000Z", "2026. 10. 5 (월) 오전 1:00"],
   ])("%s: 서울 시각으로 날짜, 요일, 시간을 적는다", (_case, iso, expected) => {
     expect(formatEventDateTime(iso)).toBe(expected);
+  });
+});
+
+describe("formatEventDate·formatTime", () => {
+  // 좁은 카드에서 "오후 / 7:00"처럼 시간 중간이 끊기지 않게, 화면은 둘을 따로 줄바꿈 없이 묶는다
+  it("일시를 서울 기준 날짜와 시간으로 나눠 적는다", () => {
+    expect(formatEventDate("2026-10-04T16:00:00.000Z")).toBe("2026. 10. 5 (월)");
+    expect(formatTime("2026-10-04T16:00:00.000Z")).toBe("오전 1:00");
+  });
+
+  it("둘을 이으면 formatEventDateTime과 같다", () => {
+    const iso = "2026-10-04T10:00:00.000Z";
+    expect(`${formatEventDate(iso)} ${formatTime(iso)}`).toBe(formatEventDateTime(iso));
   });
 });
 

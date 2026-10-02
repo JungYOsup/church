@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface SectionCardProps {
   /** h2의 id. section이 aria-labelledby로 이 제목을 이름으로 쓴다 */
@@ -21,6 +22,8 @@ interface SectionCardProps {
    * 화면 읽기 프로그램에는 칸 이름을 붙여 "<제목> 더보기"로 읽힌다.
    */
   link: { href: string; label?: string };
+  /** section에 붙일 클래스 (예: grid 칸 수) */
+  className?: string;
   contentClassName?: string;
   children: ReactNode;
 }
@@ -32,11 +35,12 @@ export function SectionCard({
   icon: Icon,
   description,
   link,
+  className,
   contentClassName,
   children,
 }: SectionCardProps) {
   return (
-    <section aria-labelledby={titleId} className="min-w-0">
+    <section aria-labelledby={titleId} className={cn("min-w-0", className)}>
       <Card className="h-full shadow-sm">
         <CardHeader>
           <CardTitle>
