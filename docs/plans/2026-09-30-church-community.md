@@ -141,3 +141,18 @@ src/components/
 - 2026-10-01: 히어로 배경을 서울 한강·도심 사진으로 정함 (Daryan Shamkhali, Unsplash License, https://unsplash.com/photos/vpk8V_O5-Xk). 교회 건물 사진 후보는 구도가 넓은 배너에 맞지 않았음. 인용구는 목업 문구 대신 개역개정 히브리서 10:24 본문을 사용
 - 2026-10-01: shadcn/ui 4.21은 `clsx`+`tailwind-merge` 대신 shadcn이 배포하는 `cn` 패키지를 설치함. 스타일 프리셋은 `radix-nova`
 - 2026-10-02: 홈 통계 카드 4개를 추가함 ([세부 계획](2026-10-02-stat-cards.md)). 카드 전체가 링크이고 아이콘과 글을 가로로 놓는 구조라, shadcn Card를 설치하지 않고 `Link`에 카드 스타일을 직접 줌. Card는 세로 구조 카드가 필요한 섹션(추천 교회 등)에서 설치함
+- 2026-10-02: 홈 두 번째 행(우리 지역 교회 지도 · 추천 교회 · 대표자 등록 안내)과 교회 데이터 계층을 추가함 ([세부 계획](2026-10-02-home-church-row.md))
+  - `Church`에 `district`(시·군·구)를 더함. `region`은 시·도이고, 지역 칩은 "서울 용산구"처럼 둘을 이어 보여 줌. `address`는 동까지만 적음
+  - 목데이터는 서울 9곳·경기 6곳, 모두 15곳. 통계 카드의 248곳·17개 지역은 전국 수치라 맞추지 않음. 같은 화면에 두 수가 같이 보이지 않도록 지도 대체 화면에는 교회 수를 적지 않음
+  - `getChurches()`는 아직 인자가 없음. bounds·region 필터는 지도 작업에서 더함
+  - 지도 칸은 카카오맵 키가 없을 때의 대체 화면(`components/map/MapFallback`)으로 먼저 만듦
+  - 배치: 1280px 미만은 한 열(지도 → 추천 → 안내), 1280px 이상은 `1 : 1.35 : 0.75` 세 칸. 태블릿 2열은 화면 순서와 읽는 순서가 어긋나서 쓰지 않음. 추천 칸은 카드 3장이 들어가도록 목업보다 조금 넓게 줌
+  - 태그 배지 3색(`--tag-*`)과 하트 강조색(`--favorite`)을 디자인 토큰에 더함. shadcn Card·Badge를 설치함
+  - 교회 사진 6장(Unsplash License, 960px로 받음. 그 교회의 실제 모습이 아니라 `alt=""`)
+    - `public/images/churches/modern-white.jpg` Remigiusz Dettlaff, https://unsplash.com/photos/modern-church-building-with-a-tall-steeple-and-cross-yc9xMSeZPnQ
+    - `red-brick.jpg` Amos Lee, https://unsplash.com/photos/a-large-brick-building-with-a-clock-tower--hLV9XYURSU
+    - `white-steeple.jpg` Roger Starnes Sr, https://unsplash.com/photos/white-wooden-church-under-blue-sky-H6jr8d3ElqQ
+    - `stone-chapel.jpg` Wally Holden, https://unsplash.com/photos/a-church-with-a-steeple-surrounded-by-trees-nd87I3pXALw
+    - `white-clock-tower.jpg` Ronni Kurtz, https://unsplash.com/photos/beige-church-near-trees-p--sYC1cSTM
+    - `brick-tower.jpg` Aleksei Zaitcev, https://unsplash.com/photos/brown-concrete-building-under-blue-sky-during-daytime-gE0DpQoVRg8
+  - 한강교회 목사는 목업의 "이재훈" 대신 가상 이름 "이준혁"을 씀. 실존 인물과 이름이 같기 때문

@@ -47,6 +47,13 @@
   --color-stat-orange-soft: var(--stat-orange-soft);
   --color-stat-violet: var(--stat-violet);
   --color-stat-violet-soft: var(--stat-violet-soft);
+  --color-tag-blue: var(--tag-blue);
+  --color-tag-blue-soft: var(--tag-blue-soft);
+  --color-tag-green: var(--tag-green);
+  --color-tag-green-soft: var(--tag-green-soft);
+  --color-tag-violet: var(--tag-violet);
+  --color-tag-violet-soft: var(--tag-violet-soft);
+  --color-favorite: var(--favorite);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -99,6 +106,15 @@
   --stat-orange-soft: oklch(0.98 0.016 73.684);
   --stat-violet: oklch(0.541 0.281 293.009);
   --stat-violet-soft: oklch(0.969 0.016 293.756);
+  /* 교회 태그 배지: 파스텔 배경에 진한 글자. 작은 글자라 배경 위 대비 4.5:1 이상 */
+  --tag-blue: var(--accent-foreground);
+  --tag-blue-soft: var(--stat-blue-soft);
+  --tag-green: oklch(0.508 0.118 165.612);
+  --tag-green-soft: var(--stat-green-soft);
+  --tag-violet: oklch(0.491 0.27 292.581);
+  --tag-violet-soft: var(--stat-violet-soft);
+  /* 관심 교회(하트)를 눌렀을 때 */
+  --favorite: oklch(0.645 0.246 16.439);
 }
 
 .dark {

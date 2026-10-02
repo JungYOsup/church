@@ -1,0 +1,298 @@
+# 홈 두 번째 행: 교회 지도 · 추천 교회 · 대표자 등록 안내
+
+## Context
+- 왜 하는가: 상위 계획서의 홈 구성(히어로 → 통계 카드 → **[지역 교회 지도 | 추천 교회 | 대표자 등록 안내]** → 행사·공지·커뮤니티)에서 세 번째 섹션 행입니다. 이번에 만드는 교회 데이터 계층(`Church`, 목데이터, 데이터 함수)과 `ChurchCard`는 다음 작업(카카오맵, 지도 페이지 목록, 교회 상세)이 그대로 씁니다.
+- spec:
+  - 무엇을: 홈 두 번째 행 전체와 교회 데이터 계층
+    - 지도 칸: 카카오 키가 없을 때 보여 줄 대체 화면
+    - 가운데 칸: 추천 교회 카드 3장
+    - 오른쪽 칸: 대표자 등록 안내
+  - 어디서: 홈 통계 카드 아래
+  - 완료 조건:
+    - 세 칸이 목업 구성대로 보입니다.
+    - 375·768·1440px에서 깨지지 않습니다.
+    - e2e 테스트를 추가하고 `npm run test`가 통과합니다.
+- 6축 위치: 실행(task 단위 실행), 검증(e2e 추가, 일부러 깨뜨려 보기)
+
+## 확인한 사실
+- **참고 디자인:** 참고 이미지(`~/Downloads/ChatGPT 이미지 2026년 9월 30일 오후 03_36_59-1.png`)를 Read로 확인했습니다.
+  - **지도 칸(약 33%):** 제목 "📍 우리 지역 교회 지도", 오른쪽 위 "전체 지도 보기 >", 지도 위 핀과 교회 이름, 왼쪽 아래 "현재 지도 범위 내 교회 24개"
+  - **추천 교회 칸(약 38%):**
+    - 머리: "추천 교회", 회색 설명 "지역을 섬기는 다양한 교회를 만나보세요.", 오른쪽 "더보기 >"
+    - 카드 3장의 구성:
+      - 사진 위에 오른쪽 위 하트(흰 원), 왼쪽 아래 어두운 지역 칩("서울 용산구")
+      - 교회 이름(굵게), 소개 두 줄(회색)
+      - 목사 얼굴과 "김성민 목사", 사람 아이콘과 "530명"
+      - 파스텔 태그 3개
+    - 카드 내용: 서연(서울 용산구, 김성민 목사, 530명, 다음세대·지역섬김·예배), 한강(서울 마포구, 이재훈 목사, 420명, 말씀중심·청년사역·지역봉사), 은혜(경기 성남시, 박지현 목사, 380명, 가정사역·선교·찬양)
+  - **대표자 안내 칸(약 24%):**
+    - 연한 파랑 배경, "🛡 교회 대표자 전용" 배지
+    - 제목 "우리 교회를 등록하고 / 더 많은 성도들과 연결하세요"
+    - 체크 3줄: 교회 정보와 사역을 소개할 수 있습니다 / 교회 행사와 소식을 공유할 수 있습니다 / 지역의 다른 교회와 협력할 수 있습니다
+    - 교회 그림, 파란 버튼 "⊕ 우리 교회 등록하기"
+- **상위 계획서(1단계 절 전체를 읽음):**
+  - **디자인 토큰:** 색은 `globals.css`의 `@theme`에 둡니다. 태그 배지는 "파스텔 배경에 진한 글자"입니다(46~49행).
+  - **컴포넌트 이름과 위치:** `home/MapPreview`, `home/RecommendedChurches`, `home/RepRegisterCta`, `church/ChurchCard`, `map/KakaoMap`(66~73행)
+  - **Church 필드:** `id, name, slogan, pastorName, memberCount, region, address, lat, lng, imageUrl, tags[]`. 목데이터는 서울·경기 12~20곳이고, 목업 속 교회(서연·한강·은혜·사랑의·샘물·드림 등)를 실제 구 좌표에 둡니다(76~79행).
+  - **카카오맵:** 키가 없으면 정적인 대체 화면을 보여 줍니다(88행).
+  - **반응형:** 목업 레이아웃은 데스크톱(≥1280px) 기준입니다. 태블릿은 2열, 모바일은 1열입니다(93~95행).
+- **지금 코드:**
+  - `src/app/page.tsx`는 `HeroBanner`와 `StatCards`를 `flex flex-col gap-4 lg:gap-5`로 쌓습니다.
+  - `src/components/church/`, `src/components/map/`, `src/lib/*/churches.ts`는 아직 없어 겹치는 파일이 없습니다.
+  - `src/components/ui/`에는 avatar·button·dropdown-menu·sheet만 있습니다.
+- **관례:**
+  - 데이터 함수는 목데이터를 돌려주는 async 함수입니다(`getStats()`, `getCurrentUser()`).
+  - 서버 컴포넌트가 데이터 함수를 `await`합니다.
+  - 목업용 값은 mock에 따로 둡니다(`mockUnreadNotificationCount`).
+  - 이니셜 아바타는 `UserMenu`가 `AvatarFallback`으로 이미 그립니다(`src/components/layout/UserMenu.tsx`).
+  - 섹션은 `aria-labelledby`/`aria-label`로 이름을 붙이고, `ul role="list"`로 목록을 만듭니다(`StatCards`).
+- **shadcn 4.21 radix-nova Card·Badge**(registry `styles/radix-nova/card.json`, `badge.json`, ctx7 `/shadcn-ui/ui/shadcn_4.21.0`):
+  - 의존성은 `cn`뿐이고, 이미 설치되어 있습니다. Badge가 쓰는 `class-variance-authority`도 설치되어 있습니다.
+  - Card는 `CardHeader > CardTitle·CardDescription·CardAction`과 `CardContent` 구조입니다. `CardAction`이 머리의 오른쪽 위에 놓여 "더보기 >" 자리로 맞습니다.
+  - Card의 테두리는 `ring-1 ring-foreground/10`입니다. 통계 카드는 `border shadow-sm`이라 `shadow-sm`을 더해 맞춥니다.
+  - 사진 카드는 `<img>`가 첫 자식일 때만 위 여백이 0이 됩니다(`has-[>img:first-child]:pt-0`). 우리는 사진 위에 칩과 하트를 겹쳐야 해서 감싸는 div가 필요하므로, `pt-0`을 직접 줍니다.
+- **기존 테스트와 충돌(조사로 찾음):**
+  - Playwright의 `getByRole` 이름은 기본이 부분 일치입니다(`playwright-core/types/types.d.ts`: "exact … Defaults to false").
+  - 그래서 새 버튼 "우리 교회 등록**하기**"가 히어로 테스트의 `{ name: "우리 교회 등록" }`과 함께 잡혀, strict mode 오류로 기존 테스트가 실패합니다.
+  - 버튼을 추가하는 T4에서 히어로 테스트 두 개에 `exact: true`를 줍니다.
+  - 메뉴 테스트는 이미 `exact: true`라 "전체 지도 보기", "더보기"와 겹치지 않습니다.
+- **next/image:** `fill`을 쓰면 `sizes`를 줘야 반응형 srcset이 생깁니다(`node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md` 199~229행). 로컬 `public/` 사진이라 `next.config`를 바꿀 필요가 없습니다.
+- **아이콘:** 설치된 lucide-react에 `Heart`, `MapPin`, `ShieldCheck`, `CircleCheck`, `Users`, `ChevronRight`, `Church`가 있습니다.
+- **배운 점(`docs/lessons.md`):**
+  - `break-keep`을 씁니다.
+  - 직접 만든 포커스 스타일은 `outline-hidden`입니다.
+  - 연한 accent 글자는 대비를 잽니다(작은 글자 4.5:1).
+  - 테스트 기대값은 앱 코드에서 가져오지 않고 직접 적습니다.
+  - jiti 별칭은 `{"@":"<프로젝트>/src"}` 꼴로 줍니다.
+  - 참고 이미지는 Read로 읽습니다.
+  - 배너 사진은 구도부터 봅니다.
+
+## 결정
+- **질문과 답:** 행을 어디까지 만들지 물었고, "행 전체"로 답을 받았습니다. 지도 칸은 대체 화면, 대표자 안내는 고정 카드이고, 실제 지도는 다음 작업입니다.
+- **정한 것:**
+  - **데이터 모양:**
+    - 상위 계획서의 `Church` 필드에 `district`(시·군·구, 예: "용산구", "성남시")를 더합니다. `region`은 시·도("서울", "경기")입니다. 지역 칩은 `${region} ${district}`로 보여 줍니다. 지도 페이지의 지역 필터가 시·도 단위라 둘을 나눕니다.
+    - `address`는 동까지만 적습니다(예: "서울특별시 용산구 이촌동"). 실제 건물을 가리키지 않게 하기 위해서입니다.
+    - `id`는 `church-1` 꼴로, `user-1` 관례를 따릅니다.
+  - **목데이터 15곳(서울 9, 경기 6):** 실제 구청·시청 근처 좌표를 쓰고, 목사 이름은 가상입니다.
+    - 서울: 서연(용산), 한강(마포), 사랑의(종로), 샘물(성동), 드림(동작), 서울(광진), 빛과소금(강남), 새생명(송파), 열린문(영등포)
+    - 경기: 은혜(성남), 기쁨(수원), 평화(고양), 열매(용인), 하늘빛(부천), 생명샘(안양)
+    - 추천 3곳의 문구는 목업 그대로입니다.
+    - 유명한 실제 교회와 이름·위치가 겹치지 않게 합니다. 예를 들어 사랑의교회는 실제 위치인 서초가 아니라 종로에 둡니다.
+  - **추천:** mock에 `mockRecommendedChurchIds = ["church-1", "church-2", "church-10"]`(서연·한강·은혜)를 따로 두고, `getRecommendedChurches()`가 그 순서로 돌려줍니다. 추천 여부는 화면 선정의 문제라 `Church` 필드에 넣지 않습니다.
+  - **`getChurches()`는 인자 없이** 전체를 돌려줍니다. bounds·region 필터는 그것을 쓰는 지도 작업에서 더합니다.
+  - **통계와 맞추지 않음:** 통계 카드의 248곳·17개 지역은 전국 수치이고, 목데이터 15곳은 그 표본입니다. 통계 카드 계획서가 "교회 목데이터를 만들 때 정한다"고 남긴 항목인데, 맞추지 않는 쪽으로 정합니다. 그래서 지도 대체 화면에는 교회 수를 적지 않습니다. 같은 화면에 248과 15가 같이 보이지 않게 하기 위해서입니다.
+  - **사진:**
+    - Unsplash에서 교회 건물 사진 6장을 골라 `public/images/churches/`에 내려받습니다. `sips -Z 960`으로 줄여 장당 약 250KB 이하로 둡니다.
+    - 추천 3곳은 목업처럼 서로 다른 사진(흰 현대식, 붉은 벽돌, 흰 종탑)을 쓰고, 나머지는 6장을 나눠 씁니다.
+    - 간판이 읽히는 사진은 뺍니다(실제 교회로 오해될 수 있음).
+    - 출처는 상위 계획서 변경 이력에 적습니다.
+    - 사진은 그 교회의 실제 모습이 아니므로 `alt=""`로 둡니다. 이름은 바로 아래 제목이 알려 줍니다.
+  - **목사:** 이니셜 Avatar(`size="sm"`)를 쓰고, 얼굴 사진은 쓰지 않습니다.
+  - **카드 링크:** 카드에는 링크를 걸지 않습니다(상세 페이지가 없음). "더보기 >"와 "전체 지도 보기 >"는 `/map`, "우리 교회 등록하기"는 `/admin`입니다.
+  - **하트:** `FavoriteButton`(클라이언트 컴포넌트)이 `aria-pressed`를 토글하고, 이름은 "서연교회 관심 교회"입니다. 누르면 채워진 하트가 됩니다. 저장은 백엔드 단계의 `favorites`에서 붙입니다.
+  - **색 토큰(`globals.css`):**
+    - 태그 3색: `--tag-{blue,green,violet}` 글자와 `-soft` 배경. 배경은 통계 카드 soft 토큰을 다시 쓰고, 글자는 -700 수준으로 작은 글자 대비 4.5:1 이상입니다.
+    - 하트 강조색: `--favorite`(rose)
+    - 태그 색은 태그 이름으로 정합니다(글자 코드 합 % 3). 그래서 같은 태그는 어느 카드에서나 같은 색입니다.
+  - **지도 대체 화면:**
+    - `src/components/map/MapFallback.tsx`에 둡니다. 지도 페이지에서도 다시 씁니다.
+    - 연한 파랑 바탕에 옅은 격자 무늬(CSS)와 지도 핀 아이콘을 놓고, "지도를 표시할 수 없습니다" / "교회 지도에서 지역별 교회를 찾아볼 수 있습니다."를 보여 줍니다.
+    - 키를 확인해 지도로 바꾸는 분기는 `KakaoMap`이 생기는 다음 작업에서 넣습니다.
+  - **행 배치:**
+    - 1280px 미만은 한 열로 지도 → 추천 → 안내 순서로 쌓고, `xl`부터 `[1fr 1.2fr 0.75fr]` 세 열입니다.
+    - 태블릿에서 2열로 놓으면 화면 순서와 읽는 순서(DOM)가 어긋나서 한 열로 둡니다.
+    - 추천 카드는 `sm`부터 한 줄에 3장, 그보다 좁으면 1장입니다.
+  - **섹션 머리:** shadcn Card의 `CardHeader`/`CardAction`을 각 섹션에서 직접 씁니다. 공통 컴포넌트로 묶는 일은 하단 행(행사·공지·커뮤니티)까지 생긴 뒤 판단합니다.
+  - **접근성:**
+    - 세 칸은 `<section aria-labelledby>`이고 제목은 `h2`입니다. 교회 이름은 `h3`입니다.
+    - 추천 카드와 안내의 체크 항목은 `ul role="list"`로 묶습니다.
+    - 장식 아이콘은 `aria-hidden`입니다.
+
+## Tasks
+task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
+
+- [x] **T1. 교회 사진 6장 준비**
+  - 파일: `public/images/churches/*.jpg` (6개)
+  - 의존: 없음
+  - 확인(동작 증거):
+    - `ls -la public/images/churches`에 6장이 있고, 장마다 250KB 이하입니다.
+    - `sips -g pixelWidth`가 장마다 960 이하입니다.
+    - 6장을 Read로 직접 봅니다. 교회 건물이 카드 비율(16:10)로 잘라도 알아볼 수 있고, 간판이 읽히지 않습니다.
+    - 장마다 Unsplash 사진 URL과 작가를 기록해 둡니다(T6에서 변경 이력에 옮김).
+  - 증거: `ls -la` → 6장, 97,960~171,766바이트. `sips` → 모두 `pixelWidth: 960`(높이 539~699). 16:10으로 자른 6장을 Read로 보니 건물이 알아볼 수 있고 간판은 없습니다. 간판·도로 표지가 보이는 후보 #2·#8은 뺐습니다. 출처:
+    - `modern-white.jpg` Remigiusz Dettlaff, https://unsplash.com/photos/modern-church-building-with-a-tall-steeple-and-cross-yc9xMSeZPnQ
+    - `red-brick.jpg` Amos Lee, https://unsplash.com/photos/a-large-brick-building-with-a-clock-tower--hLV9XYURSU
+    - `white-steeple.jpg` Roger Starnes Sr, https://unsplash.com/photos/white-wooden-church-under-blue-sky-H6jr8d3ElqQ
+    - `stone-chapel.jpg` Wally Holden, https://unsplash.com/photos/a-church-with-a-steeple-surrounded-by-trees-nd87I3pXALw
+    - `white-clock-tower.jpg` Ronni Kurtz, https://unsplash.com/photos/beige-church-near-trees-p--sYC1cSTM
+    - `brick-tower.jpg` Aleksei Zaitcev, https://unsplash.com/photos/brown-concrete-building-under-blue-sky-during-daytime-gE0DpQoVRg8
+- [x] **T2. 교회 데이터 계층**
+  - 파일: `src/lib/types.ts`, `src/lib/mock/churches.ts`, `src/lib/data/churches.ts`
+  - 의존: T1
+  - 확인(동작 증거):
+    - scratchpad 스크립트를 `JITI_ALIAS='{"@":"<프로젝트>/src"}' npx jiti`로 실행합니다. 출력 기대값:
+      - `getChurches()`가 15곳을 돌려주고, 서울 9 · 경기 6입니다.
+      - id가 모두 다릅니다.
+      - 모든 좌표가 서울·경기 범위(위도 37.0~38.0, 경도 126.6~127.4) 안입니다.
+      - 모든 `imageUrl`이 `public/` 아래에 실제로 있는 파일입니다.
+      - 태그가 1~3개입니다.
+      - `getRecommendedChurches()`는 `서연교회, 한강교회, 은혜교회` 순서입니다.
+    - `npm run lint && npm run build`가 통과합니다.
+  - 증거: `JITI_ALIAS='{"@":"<프로젝트>/src"}' npx jiti check-churches.ts` → `count 15 byRegion {"서울":9,"경기":6}`, `uniqueIds true`, `coordsOutside none`, `missingImages none`, `badTags none`, `recommended 서연교회(서울 용산구, 김성민, 530), 한강교회(서울 마포구, 이준혁, 420), 은혜교회(경기 성남시, 박지현, 380)`. lint 오류 없음, build 라우트 7개 정적 생성
+- [x] **T3. 추천 교회 섹션**
+  - 파일: `src/components/ui/card.tsx`, `src/components/ui/badge.tsx`(`npx shadcn@latest add card badge`), `src/app/globals.css`(태그·하트 토큰), `src/components/church/ChurchCard.tsx`, `src/components/church/FavoriteButton.tsx`, `src/components/home/RecommendedChurches.tsx`, `src/app/page.tsx`(통계 아래에 임시로 전체 폭 배치)
+  - 의존: T2
+  - 확인(동작 증거):
+    - `npm run dev`(3000)에 scratchpad Playwright 스크립트를 돌립니다. 375·768·1440px 기대값:
+      - "추천 교회" 영역에 카드 3장이 서연·한강·은혜 순서로 있습니다.
+      - 카드마다 지역 칩, 목사, 인원, 태그가 보입니다.
+      - 사진이 로드됩니다(`naturalWidth > 0`).
+      - 한 줄에 놓인 카드 수는 1·3·3장입니다.
+      - 가로 스크롤과 콘솔 오류가 없습니다.
+    - 하트를 누르면 `aria-pressed`가 false → true → false로 바뀝니다.
+    - 태그 글자 대비 세 색이 모두 4.5:1 이상입니다.
+    - 1440px 스크린샷을 참고 이미지의 추천 교회 칸과 나란히 비교합니다.
+    - `grep -rn "lib/mock" src/components src/app`의 결과가 없습니다.
+  - 증거: `check-t3.mjs`(개발 서버 3000)
+    - 375 `perRow=1` · 768 `perRow=3` · 1440 `perRow=3`. 세 폭 모두 이름 순서 `서연교회,한강교회,은혜교회`, `imgsLoaded=true,true,true`, `overflow=false`, 콘솔 오류 none
+    - 1440 카드 글: `서울 용산구 서연교회 … 김성민 목사 530명 다음세대 지역섬김 예배` 등 3장
+    - 하트: `aria-pressed: false → true → false`
+    - 태그 대비 5.09~6.65(세 색 모두 사용)
+    - 1440 스크린샷이 참고 이미지와 같은 구성입니다: 사진 위 왼쪽 아래 지역 칩, 오른쪽 위 흰 원 하트, 굵은 이름, 회색 소개, 이니셜·목사·인원 줄, 파스텔 태그. 다른 점은 회색 설명이 제목 옆이 아니라 아래 줄에 있다는 것입니다(`CardHeader` 구조).
+    - mock import grep 결과 없음(exit 1), lint 통과, build `✓ Compiled successfully`
+  - 재확인(T4에서 ChurchCard를 고친 뒤): `check-t3.mjs` → 375·768·1440 `perRow` 1·3·3, 이름 순서·사진 로드·`overflow=false`·콘솔 오류 none, 하트 `false → true → false`, 태그 대비 5.09~6.65로 처음과 같음. lint 종료 코드 0, build `✓ Compiled successfully in 1612ms`
+  - 재확인(리뷰 반영으로 `sizes`를 고친 뒤): `check-t3.mjs` 결과가 위와 같음. lint 종료 코드 0, build `✓ Compiled successfully in 1201ms`, `npm run test` → `35 passed (15.7s)`
+- [x] **T4. 지도 대체 화면·대표자 안내와 세 칸 배치**
+  - 파일: `src/components/map/MapFallback.tsx`, `src/components/home/MapPreview.tsx`, `src/components/home/RepRegisterCta.tsx`, `src/app/page.tsx`, `e2e/home.spec.ts`(히어로 테스트 2개에 `exact: true`)
+  - 의존: T3
+  - 확인(동작 증거):
+    - 히어로 테스트를 고치기 전에 `npm run test`를 한 번 돌립니다. 히어로 "우리 교회 등록" 테스트가 strict mode 오류로 실패하는 것을 기록합니다. 충돌이 실제로 있다는 증거입니다.
+    - 테스트를 고친 뒤 `npm run test`에서 기존 25개가 통과합니다.
+    - 개발 서버에서 스크립트로 확인합니다:
+      - 1280·1440px에서 세 칸의 위쪽 좌표가 같고, 왼쪽부터 지도 → 추천 → 안내 순서입니다.
+      - 375·768·1024px에서는 세 칸이 위에서부터 같은 순서로 쌓입니다.
+      - 지도 칸에 대체 화면 문구가 보입니다.
+      - "전체 지도 보기"·"더보기"는 `/map`, "우리 교회 등록하기"는 `/admin`으로 연결됩니다.
+      - 1280px에서 추천 카드 안의 목사·인원 줄과 태그가 카드 밖으로 넘치지 않습니다(`scrollWidth <= clientWidth`).
+      - 가로 스크롤과 콘솔 오류가 없습니다.
+    - 1440px 스크린샷을 참고 이미지의 두 번째 행과 비교합니다.
+  - 증거:
+    - 고치기 전 `npm run test` → `1 failed, 24 passed`. `strict mode violation: getByRole('link', { name: '우리 교회 등록' }) resolved to 2 elements`
+    - `exact: true`를 준 뒤 `npm run test` → `25 passed (12.4s)`
+    - `check-t4.mjs`(개발 서버 3000):
+      - 375·768·1024 `STACKED (map→rec→cta)`, 1280·1440 `ONE ROW (map→rec→cta)`
+      - 1280 폭 385/519/288, 높이 398 같음. 1440 폭 436/589/327, 높이 393 같음
+      - 추천 카드 폭 1280 `154`·1440 `178`, 다섯 폭 모두 `cardOverflow=false`, `overflow=false`, 콘솔 오류 none
+      - 지도 칸 `지도를 표시할 수 없습니다 교회 지도에서 지역별 교회를 찾아볼 수 있습니다.`
+      - 링크 `{"전체 지도 보기":"/map","더보기":"/map","우리 교회 등록하기":"/admin"}`, 안내 체크 3줄
+    - 1440 스크린샷이 참고 이미지의 두 번째 행과 같은 구성입니다(지도 칸 머리와 오른쪽 위 링크, 사진 카드 3장, 연한 파랑 안내 칸의 배지·체크 3줄·파란 버튼). 다른 점은 지도 자리가 대체 화면이라는 것과, 교회 그림 대신 옅은 교회 아이콘을 쓴 것입니다.
+    - 1280·375 스크린샷: 목사·인원이 두 줄로 깔끔하게 나뉘고 카드끼리 줄 높이가 맞습니다. 375에서는 빈 줄이 없습니다.
+    - lint 종료 코드 0, build `✓ Compiled successfully`, mock import grep exit 1
+- [x] **T5. 두 번째 행 e2e 테스트**
+  - 파일: `e2e/home.spec.ts`
+  - 의존: T4
+  - 확인(동작 증거):
+    - 새 테스트 9개를 추가합니다:
+      - 추천 카드 3장의 이름·지역·목사·인원·태그
+      - 하트 토글
+      - "더보기" → `/map`
+      - 지도 칸의 대체 화면과 "전체 지도 보기" → `/map`
+      - 안내 칸의 체크 3줄과 "우리 교회 등록하기" → `/admin`
+      - 폭별 배치 3개: 375·768은 세 칸이 쌓이고, 1440은 한 줄입니다. 추천 카드 열 수는 1·3·3입니다.
+      - 기대값은 테스트에 직접 적습니다.
+    - `npm run test`에서 34개가 모두 통과합니다.
+    - 일부러 깨뜨려 봅니다(확인 후 되돌림):
+      - 서연 `memberCount` 530을 531로 바꾸면 카드 테스트만 실패합니다.
+      - `xl:grid-cols-[…]`를 지우면 1440 배치 테스트만 실패합니다.
+      - 하트의 `aria-pressed` 토글을 빼면 하트 테스트만 실패합니다.
+  - 증거: 새 테스트 10개를 더해 `npm run test` → `35 passed (24.3s)`, lint 종료 코드 0. 일부러 깨뜨려 보기(각각 되돌림):
+    - 서연 530→531: `카드 3장이 이름, 지역, 목사, 인원, 태그를 순서대로 보여 준다`만 실패. `Expected substring: "530명"`, `Received string: "…김성민 목사531명…"` → `1 failed, 34 passed`
+    - `xl:grid-cols-[…]` 삭제: `1440px 폭에서 세 칸이 한 줄에 놓이고 추천 카드는 한 줄에 3장`만 실패 → `1 failed, 34 passed`
+    - 하트 토글 제거: `하트를 누르면 관심 교회로 표시되고, 다시 누르면 풀린다`만 실패. `Expected: "true"`, `Received: "false"` → `1 failed, 34 passed`
+    - 되돌린 뒤 `npm run test` → `35 passed (20.7s)`
+- [x] **T6. 문서 반영**
+  - 파일: `CLAUDE.md`, `docs/plans/2026-09-30-church-community.md`, `docs/lessons.md`
+  - 의존: T5
+  - 확인(동작 증거):
+    - `grep -n "church/\|map/" CLAUDE.md`가 Architecture에 새 폴더 줄을 보여 줍니다.
+    - 상위 계획서 변경 이력에 다음이 있습니다:
+      - 이 계획서 링크
+      - `district` 필드 추가
+      - 사진 6장의 출처
+      - 1280px 미만 한 열 배치
+      - 통계와 목데이터 수를 맞추지 않은 결정
+    - `docs/lessons.md`에 "Playwright 역할 이름은 부분 일치" 항목이 있습니다.
+    - 링크한 파일이 실제로 있습니다.
+  - 증거:
+    - `grep -n "church/\|map/" CLAUDE.md` → 21행 `src/components/church/`, 22행 `src/components/map/`. "앞으로 생길 폴더"에서 church·map을 뺐습니다.
+    - 상위 계획서 144~158행: 이 계획서 링크, `district`, 15곳과 통계를 맞추지 않은 결정, 1280px 미만 한 열과 `1 : 1.35 : 0.75`, 사진 6장의 출처, 목사 이름 변경
+    - `docs/lessons.md` 46행 "개발 서버의 CSS에 새 클래스가 빠질 때가 있다", 74행 "역할 이름은 기본이 부분 일치다", 콘텐츠 절 "목업 속 이름도 확인한다"
+    - `ls docs/plans/2026-10-02-home-church-row.md` 존재
+
+## 리스크와 멈출 조건
+- **1280px에서 추천 카드가 좁음:** 카드 폭이 약 145px입니다.
+  - T4에서 넘침을 측정합니다.
+  - 넘치거나 답답하면 세 열을 `2xl`(1536px)로 옮기고, 1280~1535px에서는 지도·안내 2열 위에 추천을 전체 폭으로 둡니다. 이 경우 변경 이력에 적습니다.
+- **사진 내려받기가 막힘:** 네트워크나 권한 문제로 Unsplash에서 받을 수 없으면 T1에서 멈추고 묻습니다. 다른 사진 출처를 정하는 일은 계획 밖 결정이기 때문입니다.
+- **지도 대체 화면 테스트가 카카오 작업 때 바뀜:** `.env.local`에 키를 넣으면 빌드에 키가 들어가 대체 화면이 사라집니다. 테스트 환경에서 키를 다루는 방법은 카카오맵 작업에서 정합니다. 이번 테스트는 키가 없는 지금 상태를 검사합니다.
+- **계획 밖 결정이 필요할 때:** 범위·데이터 구조 변경, 새 의존성, 되돌리기 어려운 작업이 필요해지면 다음 task로 넘어가지 않고 묻습니다.
+
+## 검증
+- 전체 완료 조건:
+  - `npm run lint && npm run build`
+  - `npm run test` (34개)
+  - 375·768·1440px 스크린샷을 참고 이미지와 비교
+- 화면 확인: `npm run dev`(3000)에서 375 / 768 / 1280 / 1440px를 봅니다. 참고 디자인과 다음을 비교합니다:
+  - 세 칸의 비율
+  - 카드 사진 위의 칩과 하트
+  - 파스텔 태그
+  - 안내 칸의 연한 파랑 배경과 파란 버튼
+- 일부러 깨뜨려 보기: T5의 세 가지(인원 숫자, 세 열 배치, 하트 토글). 확인한 뒤 되돌리고 `npm run test`로 원래 상태가 통과하는지 다시 봅니다.
+- 마무리: `/code-review`로 독립 리뷰를 받고, 새 함정은 `docs/lessons.md`에 적습니다.
+
+## 범위 밖
+- 실제 카카오맵, 키 분기, `.env.example`
+- 지도 페이지(`/map`)와 교회 상세 페이지
+- `getChurches()`의 bounds·region 필터
+- 하트 저장(백엔드 `favorites`)
+- 통계 숫자를 목데이터에서 계산하기
+- 하단 행(행사·공지·커뮤니티)
+- 섹션 머리 공통 컴포넌트
+- 다크 모드
+- `next.config`, `src/lib/mock/stats.ts`, `.harness/` 변경
+
+## 변경 이력
+<!-- run-plan이 계획과 달라진 점을 날짜·내용·이유로 적는다 -->
+- 2026-10-02 (T1): `sips -Z 960`으로 줄이지 않고, Unsplash 이미지 주소에 `w=960&q=80`을 줘서 처음부터 960px로 받았습니다. 결과(너비 960, 250KB 이하)는 같고 단계가 하나 줄었습니다. 무료 사진만 쓰려고 검색 결과에서 Unsplash+(`premium`·`plus`) 사진은 뺐습니다.
+- 2026-10-02 (T2): 한강교회 목사 이름을 목업의 "이재훈"에서 가상 이름 "이준혁"으로 바꿨습니다. 목업 이름이 실제로 잘 알려진 대형 교회 담임목사와 같아서, 실존 인물로 오해되지 않게 하기 위해서입니다. 나머지 추천 문구는 목업 그대로입니다. 주소의 동은 좌표로 쓴 구청·시청이 있는 동에 맞췄습니다.
+- 2026-10-02 (T3): 처음 확인에서 768·1440px도 한 줄에 1장이었습니다. 원인을 하나씩 확인했습니다.
+  - 브라우저 CSS에 `sm:grid-cols-3` 규칙이 없었습니다. 같은 시점의 프로덕션 빌드 CSS에는 있었습니다. 그래서 코드가 아니라 개발 서버의 CSS가 오래된 것으로 판단했습니다.
+  - `globals.css`를 `touch`해도 생기지 않았습니다.
+  - 마침 다른 세션이 띄운 개발 서버가 실행 시간 제한으로 종료되어, 새로 띄웠습니다. 그러자 규칙이 생겼고 1·3·3장으로 놓였습니다.
+  - 코드는 바꾸지 않았습니다. 배운 점은 T6에서 `docs/lessons.md`에 적습니다.
+- 2026-10-02 (T4): 넘침 측정은 통과했지만, 1280·1440px 스크린샷에서 추천 카드(143·165px)가 답답했습니다. 목사·인원 줄이 구분선 뒤에서 꺾여 구분선이 줄 끝에 남았고, 태그 줄 수가 카드마다 달라 목사 줄 높이가 어긋났습니다(`mt-auto`). 다음과 같이 고쳤습니다.
+  - **카드(T3 코드):** 구분선을 없애 줄바꿈이 깔끔해지게 했습니다. `mt-auto`를 빼고, 카드가 나란히 놓이는 `sm` 이상에서 소개 두 줄 자리를 확보해(`sm:min-h-[2lh]`) 목사 줄을 위쪽에 맞췄습니다. T3의 체크를 풀고 다시 확인했습니다.
+  - **비율:** 세 칸을 `1 : 1.2 : 0.75`에서 `1 : 1.35 : 0.75`로 바꿔 추천 칸을 넓혔습니다. 추천 카드 폭이 1280px에서 154, 1440px에서 178이 되어 1440px에서는 목사·인원이 한 줄에 들어갑니다.
+  - **쓰지 않은 대응안:** 리스크 절의 대응안(세 칸을 `2xl`로 옮기고 1280~1535px에서는 추천을 지도·안내 위에 두기)은 쓰지 않았습니다. 화면 순서와 읽는 순서가 다시 어긋나고, 카드 안쪽 정리만으로 답답함이 풀렸기 때문입니다.
+- 2026-10-02 (T5): 새 테스트는 계획의 9개가 아니라 10개(총 35개)입니다. 계획에 적은 목록 항목은 8개였는데 개수를 잘못 셌습니다. 통계 카드처럼 이동 테스트를 칸마다 따로 두어, 지도 칸(대체 화면·이동)과 안내 칸(체크 3줄·이동)을 각각 둘로 나눴습니다.
+- 2026-10-02 (리뷰 반영): `/code-review`(medium)는 버그를 찾지 못했고, 사소한 지적 1개를 남겼습니다. 추천 카드 이미지의 `sizes`가 1280px 이상에서 220px로, 실제 카드 폭(1280px에서 154, 1440px에서 178, 최대 약 200)보다 컸습니다. 비율을 1.35로 바꾸기 전에 정한 값이었습니다. 200px로 고치고 주석도 실제 폭에 맞췄습니다. T3의 체크를 풀고 다시 확인했습니다.
+
+## 검증 결과
+<!-- run-plan이 마무리 검증의 실제 출력 근거를 적는다. 리뷰에서 반영하지 않은 지적은 이유와 함께 적는다 -->
+- **lint·build:** `npm run lint` 종료 코드 0, `npm run build` → `✓ Compiled successfully in 1612ms`, 라우트 7개 정적 생성
+- **동작 테스트:** 일부러 깨뜨린 코드를 되돌린 뒤 `npm run test` → `35 passed (20.7s)` (기존 25개 + 새 두 번째 행 테스트 10개)
+- **일부러 깨뜨려 보기:** 세 가지 모두 해당 테스트 하나만 실패했습니다(T5 증거 참고).
+  - 서연 인원 530→531: 카드 테스트
+  - 세 칸 배치 삭제: 1440px 배치 테스트
+  - 하트 토글 제거: 하트 테스트
+- **화면 확인:** 개발 서버(3000)에서 375 / 768 / 1024 / 1280 / 1440px를 확인했습니다.
+  - 375·768·1024는 한 열(지도 → 추천 → 안내), 1280·1440은 한 줄입니다.
+  - 추천 카드는 375에서 한 줄에 1장, 768 이상에서 3장입니다.
+  - 모든 폭에서 가로 스크롤, 카드 안 넘침, 콘솔 오류가 없습니다.
+  - 1440 스크린샷이 참고 이미지의 두 번째 행과 같은 구성입니다. 다른 점은 다음 세 가지입니다.
+    - 지도 자리가 대체 화면입니다(실제 지도는 다음 작업).
+    - 교회 그림 대신 옅은 교회 아이콘을 썼습니다.
+    - 섹션 설명이 제목 옆이 아니라 아래 줄에 있습니다.
+- **독립 리뷰:** `/code-review`(medium) 결과 버그는 없었습니다. 리뷰는 `cn` import, 색 클래스 덮어쓰기, `Avatar size="sm"`·`Button asChild`, 사진 6장이 있는지, 추천 순서, 테스트 35개 통과, 히어로 테스트의 `exact: true`를 확인했습니다. 사소한 지적 1개(이미지 `sizes`)는 반영했습니다(변경 이력 참고). 반영 뒤 `npm run test` → `35 passed (15.7s)`
+- **리뷰에서 반영하지 않은 지적:** 없음

@@ -22,3 +22,22 @@ export interface Stats {
   /** 인증을 마친 교회 대표자 수 */
   verifiedRepresentativeCount: number;
 }
+
+export interface Church {
+  id: string;
+  name: string;
+  /** 카드에 보여 줄 한 줄 소개 */
+  slogan: string;
+  pastorName: string;
+  memberCount: number;
+  /** 시·도 (예: 서울, 경기). 지도 페이지의 지역 필터 단위 */
+  region: string;
+  /** 시·군·구 (예: 용산구, 성남시) */
+  district: string;
+  /** 동까지만 적는다. 목데이터가 실제 건물을 가리키지 않게 하기 위함 */
+  address: string;
+  lat: number;
+  lng: number;
+  imageUrl: string;
+  tags: string[];
+}

@@ -17,7 +17,9 @@
 ```
 src/app/                  라우트. 홈만 구현했고 map, events, notices, community, admin은 ComingSoon 자리표시 페이지
 src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
-src/components/home/      홈 섹션 (HeroBanner, StatCards)
+src/components/home/      홈 섹션 (HeroBanner, StatCards, MapPreview, RecommendedChurches, RepRegisterCta)
+src/components/church/    교회 카드 (ChurchCard, FavoriteButton). 지도 페이지 목록도 같이 쓴다
+src/components/map/       지도 (MapFallback: 카카오맵 키가 없을 때의 대체 화면)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (ComingSoon)
 src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
 src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
@@ -28,7 +30,7 @@ public/images/            정적 이미지 (출처는 계획서 변경 이력에
 e2e/                      Playwright 동작 테스트. 메뉴 명세는 src를 가져오지 않고 테스트에 직접 적는다
 docs/plans/               계획서와 결정 기록
 ```
-앞으로 생길 폴더(`components/church`, `components/event`, `components/map`, `supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
+앞으로 생길 폴더(`components/event`, `supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
 
 데이터 흐름: 페이지/컴포넌트 → `src/lib/data/*.ts`의 async 함수 → 목데이터(UI 단계) 또는 Supabase(백엔드 단계). 백엔드로 바꿀 때는 이 함수 안쪽만 고치고 UI 코드는 건드리지 않는다.
 
