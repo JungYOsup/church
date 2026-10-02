@@ -343,7 +343,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - 1440 스크린샷을 참고 이미지와 비교했습니다. 같은 구성입니다: 행사 카드 3장과 ">" 버튼, 공지 4줄(교회 사진 썸네일·날짜·교회·분류 배지), 글 4줄(행사 사진 썸네일·교회·지난 시간·분류 배지), 비율 약 44 : 28 : 28. 다른 점은 다음과 같습니다.
       - 설명이 제목 옆이 아니라 아래 줄에 있습니다(두 번째 행과 같은 `SectionCard` 구조).
       - 공지의 종 아이콘이 주황이 아니라 다른 칸과 같은 파랑입니다.
-- [ ] **T9. 문서 반영**
+- [x] **T9. 문서 반영**
   - 파일: `CLAUDE.md`, `docs/plans/2026-09-30-church-community.md`, `docs/lessons.md`
   - 의존: T8
   - 테스트 먼저(red): 해당 없음 — 문서만 바꿈
@@ -358,6 +358,19 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - 행사 사진 6장의 출처
     - `docs/lessons.md`에 이번에 겪은 함정이 있습니다(최소: Intl 한국어 날짜의 끝 점과 "어제", Vitest TZ는 config 맨 위).
     - 링크한 파일이 실제로 있습니다.
+  - 증거:
+    - `CLAUDE.md`
+      - 22~28행에 `components/event/`(EventCard)와 `common/`(ComingSoon, TagList, HorizontalScroller)가 있고, home 줄에 세 칸·SectionCard·FeedRow가 있습니다.
+      - `src/lib/geo.ts, timeline.ts, datetime.ts` 순수 로직 줄(짝 테스트, Vitest는 UTC)이 있습니다.
+      - 38행 "앞으로 생길 폴더"는 `supabase/migrations/`만 남았습니다.
+    - 상위 계획서 159행부터 변경 이력이 있습니다: 이 계획서 링크, 상대 날짜 목데이터, 빌드 시각, 서울 시간대와 UTC 단위 테스트, 타입·`withChurch`, 배치(768 2열, 1280 `1.6:1:1`), `SectionCard`·`TagList`, 분류 색 토큰, 목업 문구 변경, 행사 사진 6장 출처
+    - 카카오맵 계획: T4 항목에서 `src/lib/geo.ts`를 빼고 변경 이력(171행)에 이유를 적었습니다. 이번에 Architecture에 함께 적었기 때문입니다.
+    - `docs/lessons.md`에 더한 항목:
+      - 환경과 도구: "Unsplash 사진 찾기와 받기"
+      - Next.js: "'같다'는 결과를 믿기 전에"(개발 서버 probe)
+      - 테스트: "대비를 잴 때 브라우저가 돌려주는 색은 oklch다"
+      - 새 절 "날짜와 시간": 고정 날짜 목데이터, KST에서 안 보이는 시간대 누락과 Vitest TZ, Intl 한국어 표기의 끝 점과 "어제", 상대 시간 경계, "오후 / 7:00" 줄바꿈
+    - 링크 확인: `lessons.md`의 `(plans/…)` 링크를 모두 `ls`로 확인했고 MISSING이 없습니다. `docs/plans/2026-10-02-home-third-row.md`도 있습니다.
 
 ## 리스크와 멈출 조건
 - **1280px에서 칸이 좁음:** 행사 카드는 약 158px, 공지·글 칸은 약 330px입니다. T8에서 넘침을 재고 스크린샷을 봅니다. 답답하면 비율이나 한 번에 보이는 카드 수를 조정하고 변경 이력에 적습니다.
