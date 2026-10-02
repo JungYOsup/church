@@ -156,3 +156,28 @@ src/components/
     - `white-clock-tower.jpg` Ronni Kurtz, https://unsplash.com/photos/beige-church-near-trees-p--sYC1cSTM
     - `brick-tower.jpg` Aleksei Zaitcev, https://unsplash.com/photos/brown-concrete-building-under-blue-sky-during-daytime-gE0DpQoVRg8
   - 한강교회 목사는 목업의 "이재훈" 대신 가상 이름 "이준혁"을 씀. 실존 인물과 이름이 같기 때문
+- 2026-10-02: 홈 세 번째 행(다가오는 행사 · 최근 공지 · 커뮤니티 최신 글)과 행사·공지·글 데이터 계층을 추가함 ([세부 계획](2026-10-02-home-third-row.md)). 이 행으로 홈이 참고 이미지와 같은 구성이 됨. `feat/home-third-row` branch에서 task마다 커밋하고 master에 merge 커밋으로 합침
+  - **목데이터 날짜:** 고정하지 않고 지금 시각을 받아 "서울 날짜로 오늘부터 며칠 뒤 몇 시"로 만듦(`createMockEvents(now)` 등). 고정하면 시간이 지나 모두 지난 행사가 되어 홈 칸이 비고 e2e가 실패하기 때문
+  - **"지금"은 빌드 시각:** `cacheComponents`가 꺼져 있어 홈은 빌드 때 정적으로 만들어짐. 다시 그리는 주기(`revalidate`/`connection`)는 Supabase를 붙일 때 정함
+  - **시간대:** 날짜는 모두 `Asia/Seoul`로 표기함(`src/lib/datetime.ts`). 배포 서버(Vercel)가 UTC라 시간대를 빼먹으면 9시간 어긋나기 때문. Vitest는 `vitest.config.mts`에서 TZ를 UTC로 고정해, 그 실수를 KST 컴퓨터에서도 잡음
+  - **타입:**
+    - `ChurchEvent`, `Notice`, `Post`. 시각은 ISO 문자열이고, 분류는 문자열 union임
+    - 화면에는 `WithChurch<T>`(교회 이름·사진)를 붙여 넘김. 목데이터 단계에서는 `data/churches.ts`의 `withChurch()`가 붙이고, Supabase 단계에서는 쿼리 join으로 바뀜
+  - **고르기 로직:** `src/lib/timeline.ts`의 `pickUpcoming`·`pickLatest`를 테스트 먼저 구현함. TDD 규칙을 만든 뒤 처음 쓴 실전임
+  - **홈 개수:** 행사 6개(가로 스크롤, 이전·다음 버튼), 공지 4개, 글 4개. 목데이터는 행사 10개(지난 행사 2개 포함), 공지 8개, 글 8개
+  - **배치:**
+    - 768px 미만은 한 열(행사 → 공지 → 커뮤니티)
+    - 768~1279px는 행사를 전체 폭으로 위에, 그 아래에 공지 | 커뮤니티 두 칸. 두 번째 행과 달리 읽는 순서와 화면 순서가 같아서 2열을 씀
+    - 1280px 이상은 `1.6 : 1 : 1` 세 칸(목업 44 : 28 : 28)
+  - **공통 컴포넌트:**
+    - 두 번째 행 계획이 미뤄 둔 "섹션 머리 공통 컴포넌트"를 `home/SectionCard`로 만들어 다섯 칸에 씀
+    - 태그 목록과 색 규칙은 `common/TagList`로 옮겨 교회·행사 카드가 함께 씀
+  - **분류 배지 색:** `--tag-rose`, `--tag-orange`, `--tag-gray`를 디자인 토큰에 더함. 공지·글 배지 8가지의 대비는 4.92~6.87:1
+  - **목업 문구:** 제목에 연도·월을 넣지 않음. 날짜가 상대값이라 어느 때 보아도 어색하지 않게 하기 위함("2024 청년 연합 찬양집회" → "청년 연합 찬양집회", "8월 새벽부흥회" → "특별새벽기도회")
+  - **사진:** 공지 썸네일은 그 교회 사진, 커뮤니티 썸네일은 행사 사진을 다시 씀. 행사 사진 6장(Unsplash License, 960px, `alt=""`)의 출처:
+    - `public/images/events/worship.jpg` NATHAN MULLET, https://unsplash.com/photos/pmiW630yDPE
+    - `volunteer.jpg` Rineshkumar Ghirao, https://unsplash.com/photos/UdDjFekHQuk
+    - `bible.jpg` Aaron Burden, https://unsplash.com/photos/c333d6YEhi0
+    - `prayer.jpg` Dallas Penner, https://unsplash.com/photos/NsQZkWRUwcs
+    - `gathering.jpg` Nicolas Lobos, https://unsplash.com/photos/qbazkeo-R1o
+    - `choir.jpg` Olek Buzunov, https://unsplash.com/photos/B-moLesnWhY

@@ -41,3 +41,45 @@ export interface Church {
   imageUrl: string;
   tags: string[];
 }
+
+/** 행사·공지·글 목록에 함께 보여 줄 교회 정보 */
+export type ChurchSummary = Pick<Church, "id" | "name" | "imageUrl">;
+
+/** 화면에 교회 정보를 붙여 보여 줄 때의 꼴. Supabase 단계에서는 쿼리의 join 결과다 */
+export type WithChurch<T> = T & { church: ChurchSummary };
+
+/** 교회가 여는 행사. 브라우저의 Event와 이름이 겹치지 않게 ChurchEvent로 둔다 */
+export interface ChurchEvent {
+  id: string;
+  churchId: string;
+  title: string;
+  /** 시작 시각 (ISO 8601) */
+  startsAt: string;
+  imageUrl: string;
+  tags: string[];
+}
+
+export type NoticeCategory = "행사안내" | "일정변경" | "모집안내" | "일반공지";
+
+/** 교회가 올린 공지. 목록 썸네일은 그 교회 사진을 쓴다 */
+export interface Notice {
+  id: string;
+  churchId: string;
+  title: string;
+  category: NoticeCategory;
+  /** 게시 시각 (ISO 8601) */
+  publishedAt: string;
+}
+
+export type PostCategory = "기도제목" | "사역나눔" | "선교소식" | "봉사후기";
+
+/** 커뮤니티 글. 교회는 글쓴이가 속한 교회다 */
+export interface Post {
+  id: string;
+  churchId: string;
+  title: string;
+  category: PostCategory;
+  /** 작성 시각 (ISO 8601) */
+  createdAt: string;
+  imageUrl: string;
+}

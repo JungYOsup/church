@@ -53,6 +53,12 @@
   --color-tag-green-soft: var(--tag-green-soft);
   --color-tag-violet: var(--tag-violet);
   --color-tag-violet-soft: var(--tag-violet-soft);
+  --color-tag-rose: var(--tag-rose);
+  --color-tag-rose-soft: var(--tag-rose-soft);
+  --color-tag-orange: var(--tag-orange);
+  --color-tag-orange-soft: var(--tag-orange-soft);
+  --color-tag-gray: var(--tag-gray);
+  --color-tag-gray-soft: var(--tag-gray-soft);
   --color-favorite: var(--favorite);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -113,6 +119,13 @@
   --tag-green-soft: var(--stat-green-soft);
   --tag-violet: oklch(0.491 0.27 292.581);
   --tag-violet-soft: var(--stat-violet-soft);
+  /* 공지·글 분류 배지에서 더 쓰는 색 (기도제목·봉사후기·일반공지) */
+  --tag-rose: oklch(0.514 0.222 16.935);
+  --tag-rose-soft: oklch(0.969 0.015 12.422);
+  --tag-orange: oklch(0.553 0.195 38.402);
+  --tag-orange-soft: var(--stat-orange-soft);
+  --tag-gray: oklch(0.446 0.03 256.802);
+  --tag-gray-soft: var(--muted);
   /* 관심 교회(하트)를 눌렀을 때 */
   --favorite: oklch(0.645 0.246 16.439);
 }

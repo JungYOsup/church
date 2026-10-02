@@ -1,23 +1,10 @@
 import Image from "next/image";
 import { MapPin, Users } from "lucide-react";
 import { FavoriteButton } from "@/components/church/FavoriteButton";
+import { TagList } from "@/components/common/TagList";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Church } from "@/lib/types";
-
-// globals.css의 태그 토큰. Tailwind가 클래스를 찾을 수 있게 완성된 문자열로 적는다.
-const TAG_TONES = [
-  "bg-tag-blue-soft text-tag-blue",
-  "bg-tag-green-soft text-tag-green",
-  "bg-tag-violet-soft text-tag-violet",
-];
-
-/** 태그 이름으로 색을 정해, 같은 태그는 어느 카드에서나 같은 색이 되게 한다 */
-function tagToneClassName(tag: string) {
-  const sum = [...tag].reduce((total, char) => total + (char.codePointAt(0) ?? 0), 0);
-  return TAG_TONES[sum % TAG_TONES.length];
-}
 
 export function ChurchCard({ church, imageSizes }: { church: Church; imageSizes: string }) {
   return (
@@ -50,13 +37,7 @@ export function ChurchCard({ church, imageSizes }: { church: Church; imageSizes:
             {church.memberCount.toLocaleString("ko-KR")}명
           </span>
         </p>
-        <ul role="list" className="flex flex-wrap gap-1">
-          {church.tags.map((tag) => (
-            <li key={tag}>
-              <Badge className={tagToneClassName(tag)}>{tag}</Badge>
-            </li>
-          ))}
-        </ul>
+        <TagList tags={church.tags} />
       </div>
     </Card>
   );
