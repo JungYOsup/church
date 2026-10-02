@@ -2,7 +2,9 @@
   "stage": null,
   "appDir": ".",
   "run": {
-    "approved": {},
+    "approved": {
+      "test": "npm test"
+    },
     "timeoutSec": 300
   },
   "thresholds": {
