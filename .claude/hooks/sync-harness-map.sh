@@ -66,7 +66,7 @@ printf '%s\n' "$fingerprint" > "$STATE_DIR/requested"
   echo
   echo "갱신 순서:"
   echo "1. Artifact read로 지도 최신본을 받고, 저장된 파일을 고칩니다."
-  echo "2. 바뀐 내용에 맞게 데이터(AXES의 지금·요약, FILES, STEPS, TODO, 상단 기준 시각·커밋 수)를 고친 뒤 같은 url로 publish합니다."
+  echo "2. 바뀐 내용에 맞게 데이터(AXES의 지금·요약, FILES, STEPS, TODO, 상단 기준 시각·커밋 수)를 고친 뒤 같은 url로 publish합니다. hook이나 규칙이 바뀌었으면 '작업 흐름'의 그림(SVG)과 알고리즘(ALGO)도 고칩니다."
   echo "3. 점수와 체크 상태는 진단 결과(.harness/history.jsonl)가 바뀔 때만 고칩니다. 임의로 점수를 매기지 않습니다."
   echo "4. .claude/hooks/sync-harness-map.sh --mark-synced 를 실행합니다."
   echo "지도에 드러날 변화가 아니면(오타 수정 등) 게시는 건너뛰고, 이유를 한 줄로 말한 뒤 4번만 합니다."
