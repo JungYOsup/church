@@ -205,7 +205,7 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
       - 되돌린 뒤 `35 passed`
     - lint 종료 코드 0, build `✓ Compiled successfully in 1228ms`
     - 테스트 이름: 처음 쓴 상대 시간 테스트는 `%s → %s`에 기대값 대신 입력 시각이 찍혀서, green 전에 인자 순서를 바꿔 "2시간 전 → 2시간 전"처럼 읽히게 했습니다.
-- [ ] **T3. 행사 사진 6장 준비**
+- [x] **T3. 행사 사진 6장 준비**
   - 파일: `public/images/events/*.jpg` (6개)
   - 의존: 없음
   - 테스트 먼저(red): 해당 없음 — 정적 파일만 더하고, 확인할 동작이 없음
@@ -214,6 +214,19 @@ task 형식은 `run-plan`이 읽으므로 그대로 씁니다.
     - `sips -g pixelWidth`가 장마다 960 이하입니다.
     - 6장을 Read로 직접 봅니다. 16:9로 잘라도 주제(찬양·봉사·성경·기도·모임·음악)를 알아볼 수 있고, 간판·상표가 읽히지 않습니다.
     - 장마다 작가와 Unsplash URL을 기록합니다(T9에서 변경 이력에 옮김).
+  - 증거:
+    - 후보를 찾은 방법: Unsplash JSON API(`napi`)는 401을 돌려줘서 쓰지 못했습니다. `license=free` 검색 페이지를 WebFetch로 읽어 Unsplash+가 아닌 사진만 골랐습니다. 주제마다 3장씩 18장을 480px로 받아, Playwright로 16:9 모아보기를 찍어 비교했습니다.
+    - 받은 방법: `https://unsplash.com/photos/<id>/download?w=960`이 이미지 주소로 넘어가서, 그 주소의 `q=85`를 `q=80`으로 바꿔 받았습니다.
+    - `ls -la public/images/events` → 6장, 73,980~182,460바이트
+    - `sips` → 모두 `pixelWidth: 960`(높이 540~721)
+    - 6장을 16:9로 자른 모아보기를 Read로 봤습니다. 주제를 알아볼 수 있고 간판·상표가 없습니다. 얼굴이 크게 나오는 후보(공원 청소 봉사, 야외 대화)는 뺐습니다.
+    - 출처:
+      - `worship.jpg` NATHAN MULLET, https://unsplash.com/photos/pmiW630yDPE
+      - `volunteer.jpg` Rineshkumar Ghirao, https://unsplash.com/photos/UdDjFekHQuk
+      - `bible.jpg` Aaron Burden, https://unsplash.com/photos/c333d6YEhi0
+      - `prayer.jpg` Dallas Penner, https://unsplash.com/photos/NsQZkWRUwcs
+      - `gathering.jpg` Nicolas Lobos, https://unsplash.com/photos/qbazkeo-R1o
+      - `choir.jpg` Olek Buzunov, https://unsplash.com/photos/B-moLesnWhY
 - [ ] **T4. 행사 데이터 계층**
   - 파일: `src/lib/types.ts`, `src/lib/mock/events.ts`, `src/lib/data/events.ts`, `src/lib/data/churches.ts`(`withChurch`)
   - 의존: T1, T2, T3
