@@ -15,18 +15,18 @@
 
 ## Architecture
 ```
-src/app/                  라우트. 홈만 구현했고 map, events, notices, community, admin은 ComingSoon 자리표시 페이지
+src/app/                  라우트. 홈과 행사 목록(events)을 구현했고 map, notices, community, admin은 ComingSoon 자리표시 페이지
 src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
 src/components/home/      홈 섹션 (HeroBanner, StatCards, MapPreview, RecommendedChurches, RepRegisterCta,
                           UpcomingEvents, RecentNotices, CommunityFeed)과 칸 틀 SectionCard, 목록 한 줄 FeedRow
 src/components/church/    교회 카드 (ChurchCard, FavoriteButton). 지도 페이지 목록도 같이 쓴다
-src/components/event/     행사 카드 (EventCard). 행사 페이지 목록도 같이 쓴다
+src/components/event/     행사 카드 (EventCard, 홈과 행사 페이지가 같이 씀)와 행사 페이지의 태그 칩 (EventTagFilter)
 src/components/map/       지도 (MapFallback: 카카오맵 키가 없을 때의 대체 화면)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (ComingSoon, TagList, HorizontalScroller)
 src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
 src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
-src/lib/geo.ts, timeline.ts, datetime.ts
-                          순수 로직: 지도 범위 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기.
+src/lib/geo.ts, timeline.ts, datetime.ts, tags.ts
+                          순수 로직: 지도 범위 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기, 태그 모으기·거르기.
                           짝 테스트(<이름>.test.ts)가 같은 폴더에 있고 Vitest는 UTC에서 돈다
 src/lib/types.ts          도메인 타입
 src/lib/data/             데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로
