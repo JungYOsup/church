@@ -91,7 +91,7 @@ const TAG_CHIPS = [
 // "연합" 태그가 붙은 행사. 청년 연합 찬양집회에는 "연합행사"만 붙어 있어 빠진다
 const UNION_EVENTS = ["지역사회 연합 봉사활동", "연합 성가대 발표회", "연합 감사예배"];
 
-const tagFilter = (page: Page) => page.getByRole("navigation", { name: "태그 필터" });
+const tagFilter = (page: Page) => page.getByRole("navigation", { name: "태그 필터", exact: true });
 const tagParam = (page: Page) => new URL(page.url()).searchParams.get("tag");
 
 test.describe("행사 태그 필터", () => {
