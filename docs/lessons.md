@@ -58,6 +58,8 @@
 ### 개발 서버와 빌드·테스트를 동시에 돌릴 수 있다
 - `next dev`는 `.next/dev`, `next build`는 `.next`에 출력해서 함께 돌아도 된다.
 - 단, 같은 프로젝트에 `next dev`를 두 번 띄우면 두 번째는 실행되지 않는다(`.next/dev/lock`). 그래서 테스트는 개발 서버를 띄우지 않고 빌드 결과를 3100 포트로 띄운다.
+- **`next start`는 빌드와 함께 돌 수 없다:** `next start`는 `.next`를 읽는다. 그동안 `npm run build`나 `npm run test`(안에서 빌드함)가 `.next`를 다시 만들면, 떠 있던 서버가 내려준 HTML의 chunk 이름이 사라져 `/_next/static/chunks/*`가 404·500이 된다. 3000에 다른 세션이 띄운 `npm run start`가 있어 이렇게 깨졌다. 그래서 화면 확인은 다른 포트의 `next dev`(`npx next dev -p 3001`)로 했다([공지 페이지 계획](plans/2026-10-03-notices-page.md) T4).
+  - 화면이 이상하면 먼저 그 포트에 무엇이 떠 있는지 본다(`lsof -iTCP:3000 -sTCP:LISTEN`, `ps -o command -p <PID>`). `next-server`라고만 나와도 부모 프로세스가 `npm run start`이면 프로덕션 서버다.
 
 ### 개발 서버의 CSS에 새 클래스가 빠질 때가 있다
 - **상황:** 오래 떠 있던 `next dev`에서, 새로 만든 파일의 `sm:grid-cols-3`만 CSS에 없어 카드가 한 열로 보였다. 같은 시점의 `npm run build` CSS에는 그 규칙이 있었다. `globals.css`를 `touch`해도 생기지 않았고, 개발 서버를 새로 띄우자 생겼다.
@@ -71,6 +73,9 @@
 - **한국어 줄바꿈:** 좁은 화면에서 "연결되/는"처럼 단어 중간이 끊긴다. 본문 블록에 `break-keep`(word-break: keep-all)을 준다.
 - **나란히 놓인 카드는 위쪽 정렬:** 설명 길이가 카드마다 달라 한 카드만 두 줄로 꺾이면, 카드 내용을 세로 가운데 정렬(`items-center`)했을 때 이름·숫자 높이가 카드마다 어긋난다. `items-start`로 위쪽을 맞춘다(통계 카드).
 - **포커스 테두리는 `outline-hidden`:** v4의 `outline-none`은 outline을 아예 없앤다. 강제 색 모드(Windows 고대비)에서는 포커스 ring(box-shadow)도 그려지지 않아 포커스가 보이지 않는다. 직접 만든 포커스 스타일에는 `outline-hidden`을 쓴다(통계 카드 리뷰에서 발견).
+- **썸네일 비율은 `items-start`와 함께:** 가로 flex 줄의 기본 `align-items: stretch`가 썸네일을 줄 높이만큼 늘려 `aspect-4/3`이 무시됐다(375px에서 세로로 긴 사진). 글이 여러 줄로 늘어나는 줄에서는 `items-start`(또는 `items-center`)를 준다(공지 페이지 `NoticeItem`).
+- **띄어쓰기 없는 긴 글은 `wrap-anywhere`:** `break-keep`인 칸에 띄어쓰기 없는 긴 제목(주소, 긴 영단어)이 오면 flex 칸의 최소 폭이 그 글자 전체가 되어 375px에서 가로 스크롤이 생겼다. 글 칸에 `wrap-anywhere`(overflow-wrap: anywhere)를 주면 띄어쓰기에서 꺾는 한글은 그대로 두고, 꺾을 곳이 없을 때만 글자 사이에서 꺾는다. 목데이터 제목이 짧아 e2e가 못 잡으므로, 화면에서 제목을 바꿔 넣어 보는 테스트를 둔다(공지 페이지 리뷰 #3).
+- **한글 본문 폭에 `max-w-prose`를 쓰지 않는다:** `65ch`이고 `ch`는 숫자 0의 폭이라 한글로는 30자 남짓에서 꺾인다. 1440px에서 짧은 요약도 두 줄로 꺾여 줄 오른쪽이 비었다. `max-w-4xl`처럼 px 단위로 묶었다.
 - **목록 스타일을 지운 `ul`에는 `role="list"`:** preflight가 `list-style: none`을 주면 Safari VoiceOver가 목록으로 읽지 않는다.
 - **연한 accent 색은 대비를 잰다:** `orange-500` 글자는 흰 배경에서 2.89:1로 큰 글자 기준(3:1)에도 못 미쳤다. -600(3.58:1)을 썼다. 색 토큰을 정할 때 흰 카드 위 대비를 함께 확인한다.
 - **폰트 변수 이름:** shadcn이 만든 `globals.css`의 `--font-sans: var(--font-sans)`는 자기 참조다. `next/font`의 변수는 `--font-pretendard`처럼 다른 이름으로 만들고 `--font-sans`에서 가져다 쓴다.
@@ -146,6 +151,7 @@
 ### husky hook 시험
 - husky는 hook을 `sh -e`로 실행하므로 같은 방식(`.husky/_/pre-commit`)으로 시험한다.
 - 임시 index 파일(`GIT_INDEX_FILE`)을 쓰면 진짜 staging 영역을 건드리지 않고 "이 파일만 커밋하면" 상황을 흉내 낼 수 있다.
+- **`git rm`은 삭제를 바로 staging한다:** 파일을 옮기는 리팩터에서 `git rm`만 index에 올라가 있으면, 그대로 `git commit`했을 때 지운 파일을 import하는 커밋이 생긴다. pre-commit은 staging이 아니라 작업 폴더를 검사하므로 통과해 버린다. 커밋 전까지는 그냥 지우거나(`rm`) `git restore --staged`로 내려 두고, 커밋할 때 바꾼 파일과 함께 올린다([공지 페이지 계획](plans/2026-10-03-notices-page.md) 리뷰 #2).
 
 ## 스킬 만들기와 시험
 
