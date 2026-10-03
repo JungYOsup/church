@@ -181,3 +181,22 @@ src/components/
     - `prayer.jpg` Dallas Penner, https://unsplash.com/photos/NsQZkWRUwcs
     - `gathering.jpg` Nicolas Lobos, https://unsplash.com/photos/qbazkeo-R1o
     - `choir.jpg` Olek Buzunov, https://unsplash.com/photos/B-moLesnWhY
+- 2026-10-03: 행사 목록 페이지(`/events`)를 만듦 ([세부 계획](2026-10-03-events-page.md)). 홈 바깥의 첫 실제 페이지임
+  - **범위:**
+    - 다가오는 행사만 날짜순으로 보여 줌. 지난 행사는 숨김
+    - 태그는 하나만 고름. "전체"와 태그 칩 중 하나이고, 고른 칩을 다시 누르면 전체로 돌아감
+  - **필터 상태는 주소(`/events?tag=연합`)에 둠:**
+    - 서버 페이지가 `searchParams`로 거름. 칩은 `Link`라 클라이언트 컴포넌트가 없음
+    - 그래서 이 페이지만 요청마다 그려지고(`ƒ`), "다가오는"의 기준이 요청 시각임. 홈은 그대로 정적
+  - **칩:**
+    - 다가오는 행사의 태그로만 만들어, 칩을 눌러 빈 결과가 나오는 일이 없음
+    - 많이 쓰인 태그가 앞이고, 횟수가 같으면 가나다순임(`src/lib/tags.ts`의 `collectTags`)
+    - 태그는 이름이 정확히 같을 때만 맞는 것으로 봄. "연합"은 "연합행사"를 잡지 않음
+  - **데이터 함수:**
+    - `getUpcomingEvents(limit)`를 `getUpcomingEvents({ limit?, tag? })`로 바꿈. `limit`가 없으면 전부를 돌려줌
+    - 칩 목록용 `getUpcomingEventTags()`를 더함
+  - **배치:** 상위 계획의 "태블릿 2열, 모바일 1열"대로 모바일 1열, 640px 2열, 1024px 3열, 1280px 4열
+  - **탭 제목:** 고른 태그를 넣지 않고 "행사"로 고정함
+    - `Link`의 기본 미리 불러오기가 page·metadata를 검색어 없이 한 칸에 담아, 다른 태그의 제목이 남았기 때문
+    - 바뀐 결과는 개수 문구의 `role="status"`로 알림
+  - **칩에 없는 태그:** 주소(`?tag=`)로 온 값이 칩에 없으면 그 글자를 화면에 다시 적지 않음("고른 태그가 붙은 다가오는 행사가 없습니다."). 주소에 아무 문구나 넣어 이 사이트 화면에 보이게 하는 일을 막기 위함(독립 리뷰 지적)

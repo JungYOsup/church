@@ -9,7 +9,7 @@ const EVENT_COUNT = 6;
 const CARD_IMAGE_SIZES = "(min-width: 1280px) 200px, (min-width: 640px) 33vw, 75vw";
 
 export async function UpcomingEvents({ className }: { className?: string }) {
-  const events = await getUpcomingEvents(EVENT_COUNT);
+  const events = await getUpcomingEvents({ limit: EVENT_COUNT });
 
   return (
     <SectionCard
