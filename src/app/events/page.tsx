@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
+import { FilterChips } from "@/components/common/FilterChips";
 import { EventCard } from "@/components/event/EventCard";
-import { EventTagFilter } from "@/components/event/EventTagFilter";
 import { getUpcomingEventTags, getUpcomingEvents } from "@/lib/data/events";
-import { parseTagParam } from "@/lib/tags";
+import { parseSearchParam } from "@/lib/search-params";
 
 // 탭 제목에 고른 태그를 넣지 않는다. Link 기본 미리 불러오기는 page·metadata를 검색어 없이 한 칸에 담아
 // (next/dist/client/components/segment-cache/vary-path.js), 칩을 눌러 이동하면 다른 태그(또는 "행사")의 제목이 남았다.
@@ -17,7 +17,7 @@ const CARD_IMAGE_SIZES =
 
 // searchParams를 읽으므로 요청마다 그려진다. 그래서 "다가오는"의 기준이 빌드 시각이 아니라 요청 시각이다
 export default async function EventsPage({ searchParams }: PageProps<"/events">) {
-  const tag = parseTagParam((await searchParams).tag);
+  const tag = parseSearchParam((await searchParams).tag);
   const [events, tags] = await Promise.all([getUpcomingEvents({ tag }), getUpcomingEventTags()]);
   // 칩에 없는 태그는 주소에서 온 아무 글자일 수 있으므로 화면에 다시 적지 않는다
   const isKnownTag = tag !== null && tags.includes(tag);
@@ -33,7 +33,9 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
       </header>
 
       {/* 다가오는 행사가 없으면 고를 태그도 없으므로 칩을 숨긴다 */}
-      {tags.length > 0 && <EventTagFilter tags={tags} selected={tag} />}
+      {tags.length > 0 && (
+        <FilterChips label="태그 필터" basePath="/events" param="tag" options={tags} selected={tag} />
+      )}
 
       <section aria-labelledby="event-list-title" className="flex flex-col gap-3">
         <div className="flex items-baseline gap-2">

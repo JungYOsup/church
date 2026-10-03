@@ -59,13 +59,17 @@ export interface ChurchEvent {
   tags: string[];
 }
 
-export type NoticeCategory = "행사안내" | "일정변경" | "모집안내" | "일반공지";
+/** 공지 분류. 이 순서가 공지 페이지 칩의 순서다 */
+export const NOTICE_CATEGORIES = ["행사안내", "일정변경", "모집안내", "일반공지"] as const;
+export type NoticeCategory = (typeof NOTICE_CATEGORIES)[number];
 
 /** 교회가 올린 공지. 목록 썸네일은 그 교회 사진을 쓴다 */
 export interface Notice {
   id: string;
   churchId: string;
   title: string;
+  /** 목록에 보여 줄 한두 줄 요약 */
+  summary: string;
   category: NoticeCategory;
   /** 게시 시각 (ISO 8601) */
   publishedAt: string;

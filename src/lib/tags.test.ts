@@ -1,21 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectTags, filterByTag, parseTagParam } from "@/lib/tags";
-
-describe("parseTagParam", () => {
-  it("값이 없거나 비어 있으면 null을 돌려준다", () => {
-    expect(parseTagParam(undefined)).toBeNull();
-    expect(parseTagParam("")).toBeNull();
-  });
-
-  it("문자열은 그대로 돌려준다", () => {
-    expect(parseTagParam("연합")).toBe("연합");
-  });
-
-  it("같은 이름이 여러 번 오면(?tag=a&tag=b) 첫 값을 돌려준다", () => {
-    expect(parseTagParam(["찬양", "연합"])).toBe("찬양");
-    expect(parseTagParam([])).toBeNull();
-  });
-});
+import { collectTags, filterByTag } from "@/lib/tags";
 
 describe("collectTags", () => {
   it("중복 없이 많이 쓰인 태그부터 돌려준다", () => {

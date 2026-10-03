@@ -200,3 +200,15 @@ src/components/
     - `Link`의 기본 미리 불러오기가 page·metadata를 검색어 없이 한 칸에 담아, 다른 태그의 제목이 남았기 때문
     - 바뀐 결과는 개수 문구의 `role="status"`로 알림
   - **칩에 없는 태그:** 주소(`?tag=`)로 온 값이 칩에 없으면 그 글자를 화면에 다시 적지 않음("고른 태그가 붙은 다가오는 행사가 없습니다."). 주소에 아무 문구나 넣어 이 사이트 화면에 보이게 하는 일을 막기 위함(독립 리뷰 지적)
+- 2026-10-03: 공지 목록 페이지(`/notices`)를 만듦 ([세부 계획](2026-10-03-notices-page.md))
+  - **범위:** 공지 전체를 최신순으로 보여 주고, 분류 하나로 거름. 고른 칩을 다시 누르면 전체로 돌아감. 필터 상태는 행사 페이지처럼 주소(`/notices?category=일정변경`)에 둠
+  - **요약 필드:** `Notice`에 `summary`(목록에 보여 줄 한두 줄)를 더하고 목데이터 8개에 요약을 씀. Supabase 단계에서 컬럼 하나가 늘어남
+  - **분류 칩 순서:** 많이 쓰인 순서가 아니라 `types.ts`의 `NOTICE_CATEGORIES` 순서(행사안내 → 일정변경 → 모집안내 → 일반공지)이고, 공지가 없는 분류는 숨김. 분류는 몇 개로 정해져 있어 고정 순서가 예측하기 쉬움
+  - **한 열 목록:** "태블릿 2열"을 따르지 않고 모든 폭에서 한 열 줄 목록으로 둠. 공지는 글 위주라 카드 격자보다 줄 목록이 읽기 쉬움. 요약의 폭은 `max-w-4xl`로 묶음
+  - **공통으로 올린 것:**
+    - 행사 페이지의 태그 칩을 `common/FilterChips`(nav 이름, 경로, 검색어 이름을 받음)로 옮겨 두 페이지가 같이 씀. 커뮤니티 페이지도 이것을 씀
+    - `parseTagParam`을 `parseSearchParam`(`src/lib/search-params.ts`)으로 이름을 바꿔 옮김
+    - 분류 거르기는 `src/lib/categories.ts`(`collectCategories`, `filterByCategory`). 커뮤니티 글 분류에도 씀
+    - 공지 분류 배지 색을 `components/notice/categoryTones`로 옮겨 홈 칸과 페이지가 같이 씀
+  - **데이터 함수:** `getRecentNotices(limit)`를 `getRecentNotices({ limit?, category? })`로 바꾸고, 칩 목록용 `getNoticeCategories()`를 더함
+  - **탭 제목:** 행사 페이지와 같은 이유로 "공지"로 고정하고, 바뀐 결과는 개수 문구의 `role="status"`로 알림
