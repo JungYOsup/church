@@ -50,3 +50,28 @@ test.describe("헤더 알림", () => {
     expect(box!.x + box!.width).toBeLessThanOrEqual(375);
   });
 });
+
+test.describe("헤더 프로필 메뉴", () => {
+  const openProfileMenu = async (page: Page) => {
+    await page.getByRole("button", { name: /김은혜 집사님 메뉴/ }).click();
+    const menu = page.getByRole("menu");
+    await expect(menu).toBeVisible();
+    return menu;
+  };
+
+  test("'우리 교회 관리'를 누르면 대표자 관리로 간다", async ({ page }) => {
+    await page.goto("/events");
+    const menu = await openProfileMenu(page);
+    await menu.getByRole("menuitem", { name: "우리 교회 관리", exact: true }).click();
+    await expect(page).toHaveURL("/admin");
+  });
+
+  test("'내 정보'와 '로그아웃'은 꺼져 있고, 로그인 기능과 함께 열린다고 알린다", async ({ page }) => {
+    await page.goto("/");
+    const menu = await openProfileMenu(page);
+    for (const name of ["내 정보", "로그아웃"]) {
+      await expect(menu.getByRole("menuitem", { name, exact: true })).toHaveAttribute("aria-disabled", "true");
+    }
+    await expect(menu.getByText("내 정보와 로그아웃은 로그인 기능과 함께 열립니다.")).toBeVisible();
+  });
+});
