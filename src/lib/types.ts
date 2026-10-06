@@ -5,8 +5,23 @@ export interface UserProfile {
   name: string;
   /** 직분 (예: 집사, 권사, 장로) */
   title: string;
+  /** 소속 교회. 대표자면 관리하는 교회다 */
+  churchId: string;
   churchName: string;
   role: UserRole;
+}
+
+/** 대표자 인증 신청의 처리 상태 */
+export type VerificationStatus = "pending" | "approved" | "rejected";
+
+/** 대표자 인증 신청. 관리자가 증빙을 보고 승인하거나 반려한다 */
+export interface RepVerification {
+  churchId: string;
+  status: VerificationStatus;
+  /** 신청 시각 (ISO 8601) */
+  requestedAt: string;
+  /** 승인·반려 시각 (ISO 8601). 아직 처리하지 않았으면 null */
+  reviewedAt: string | null;
 }
 
 /** 홈 통계 카드에 보여 줄 연합 현황 숫자 */
