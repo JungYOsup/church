@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test } from "./fixtures";
+import { expect, moveFakeMap, test } from "./fixtures";
 
 test.describe("홈 레이아웃", () => {
   for (const width of [375, 768, 1440]) {
@@ -173,11 +173,32 @@ test.describe("홈 추천 교회", () => {
 });
 
 test.describe("홈 교회 지도 칸", () => {
-  // 카카오맵 키가 없는 지금은 항상 대체 화면이다. 지도를 붙이는 작업에서 키가 있을 때의 검사를 더한다.
+  const mapSection = (page: Page) => page.getByRole("region", { name: "우리 지역 교회 지도", exact: true });
+
+  // 테스트는 실제 카카오맵을 쓰지 않는다. 기본(unavailable)은 SDK가 없어 대체 화면이 나온다(e2e/fixtures.ts)
   test("지도를 띄울 수 없으면 대체 화면을 보여 준다", async ({ page }) => {
     await page.goto("/");
     const region = page.getByRole("region", { name: "우리 지역 교회 지도", exact: true });
     await expect(region).toContainText("지도를 표시할 수 없습니다");
+  });
+
+  test.describe("SDK를 불러오면", () => {
+    test.use({ kakaoSdk: "fake" });
+
+    test("교회 15곳에 핀을 꽂고, 지도 범위 안의 교회 수를 보여 준다", async ({ page }) => {
+      await page.goto("/");
+      const map = mapSection(page).getByRole("region", { name: "지도", exact: true });
+      // 홈 칸의 핀은 고르기가 없어 버튼이 아니라 교회 이름이 붙은 그림이다
+      await expect(map.getByRole("img")).toHaveCount(15);
+      await expect(map.getByRole("img", { name: "서연교회", exact: true })).toBeVisible();
+      await expect(map.getByRole("button")).toHaveCount(0);
+      await expect(mapSection(page)).not.toContainText("지도를 표시할 수 없습니다");
+      await expect(mapSection(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 15개");
+
+      // 서울 도심의 작은 사각형: 서연·사랑의·샘물·빛과소금교회 4곳 (좌표로 직접 세었다)
+      await moveFakeMap(page, { south: 37.5, west: 126.95, north: 37.58, east: 127.05 });
+      await expect(mapSection(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 4개");
+    });
   });
 
   test("'전체 지도 보기'를 누르면 교회 지도 페이지로 이동한다", async ({ page }) => {

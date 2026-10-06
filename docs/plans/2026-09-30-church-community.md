@@ -212,3 +212,18 @@ src/components/
     - 공지 분류 배지 색을 `components/notice/categoryTones`로 옮겨 홈 칸과 페이지가 같이 씀
   - **데이터 함수:** `getRecentNotices(limit)`를 `getRecentNotices({ limit?, category? })`로 바꾸고, 칩 목록용 `getNoticeCategories()`를 더함
   - **탭 제목:** 행사 페이지와 같은 이유로 "공지"로 고정하고, 바뀐 결과는 개수 문구의 `role="status"`로 알림
+- 2026-10-03: 교회 지도 페이지(`/map`)를 만들고 홈 지도 칸을 실제 카카오맵으로 바꿈 ([세부 계획](2026-10-03-map-page.md)). [카카오맵 계획](2026-10-02-kakao-map.md)의 남은 T2~T4를 넘겨받음
+  - **범위:** 지도 + 교회 목록 + 지역 칩. 지도가 멈출 때마다(`idle`) 범위 안의 교회만 목록에 남기고 "현재 지도 범위 내 교회 N개"를 적음. 핀이나 목록 줄로 교회 하나를 고르면 핀 위에 사진 카드가 뜨고 지도가 그 교회로 옮겨 감. 지역 필터 상태는 다른 목록 페이지처럼 주소(`/map?region=경기`)에 둠
+  - **카카오맵 연결(이 절의 81~87행과 달라진 점):**
+    - `react-kakao-maps-sdk`를 쓰지 않음. ctx7에 문서가 없고, e2e의 가짜 SDK가 흉내 낼 API 면을 우리가 정해야 하기 때문. 쓰는 API의 타입과 로더를 `components/map/kakao.ts`에 둠
+    - `next/script` 대신 Promise 하나로 SDK를 한 번만 부르는 자체 로더를 씀. 스크립트 실패, `kakao.maps` 없음, 10초 시간 초과를 모두 대체 화면으로 보냄
+    - `libraries=services,clusterer`를 붙이지 않음. geocoder는 2단계 교회 등록 폼에서, 핀 묶기는 교회가 늘 때 더함
+    - 실제 SDK는 지도를 만든 직후 `setBounds`로 맞췄을 때 `idle`을 보내지 않아, 맞춘 뒤 `event.trigger(map, "idle")`로 직접 일으킴
+    - 카카오 앱에서 **카카오맵 사용 설정**을 켜야 SDK가 200을 돌려줌. 꺼져 있으면 `403 disabled OPEN_MAP_AND_LOCAL service`이고 브라우저에는 `ERR_BLOCKED_BY_ORB`로만 보임
+  - **핀:** 파란 물방울에 흰 십자가. 이름표는 확대 수준 8 이하(가까이 볼 때)와 고른 교회에만 보임. 교회 15곳에 맞춘 수준(10)에서는 서울 쪽 이름표가 겹치기 때문
+  - **배치:** 1024px 미만은 지도(55svh) 아래 목록, 이상은 왼쪽 360px 목록(혼자 스크롤) + 오른쪽 지도이고 화면 높이에 맞춤. 읽는 순서는 목록이 먼저(키보드로 핀 15개를 지나지 않게)
+  - **목록 줄:** 좁은 칸에 15곳이 들어가도록 `ChurchCard` 대신 작은 줄 `church/ChurchListItem`을 새로 둠. 줄 전체가 고르기 버튼
+  - **데이터 함수:** `getChurches({ region? })`와 칩 목록용 `getChurchRegions()`(교회가 많은 지역부터). 범위 거르기는 받은 교회를 클라이언트에서 `filterWithinBounds`로 함. Supabase 단계에서 bounds 쿼리로 바꿀지 정함
+  - **홈 지도 칸:** 같은 `ChurchMap`에 교회 수 알약을 켜서 씀. 알약은 카카오 로고를 가리지 않게 로고 줄 위에 둠. 목업은 서울을 가까이 보여 주며 이름표를 붙였지만, 교회 15곳이 모두 보이게 맞춰 이름표는 확대할 때 나타남
+  - **e2e:** 테스트 빌드는 `webServer.env`의 가짜 키로 하고(`.env.local`보다 앞섬), fixture가 카카오 요청을 빈 스크립트(대체 화면) 또는 가짜 SDK(`e2e/kakao-fake.js`)로 돌려줌. 실제 카카오 서버에는 요청하지 않음
+  - **탭 제목:** 행사·공지와 같은 이유로 "교회 지도"로 고정
