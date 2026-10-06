@@ -1,0 +1,260 @@
+# 헤더 버튼 채우기: 통합 검색, 알림 목록, 사용자 메뉴
+
+## Context
+- **왜 하는가:** 1단계 라우트는 다 만들었지만, 헤더의 버튼 5개는 눌러도 아무 일이 없습니다. 검색, 알림, 사용자 메뉴의 내 정보·우리 교회 관리·로그아웃입니다. 헤더는 모든 페이지에 보이므로, 데모에서 가장 먼저 눌러 볼 곳이 비어 있는 셈입니다. 처음 헤더 계획(`2026-10-01-setup-header-hero.md` 54행)에서 "실제 기능은 다음 사이클"로 미뤄 둔 일입니다.
+- **spec**
+  - 무엇을:
+    - 통합 검색 페이지(`/search?q=`). 교회·행사·공지·커뮤니티 글을 목데이터에서 찾습니다.
+    - 알림 목록 드롭다운. 알림을 누르면 관련 화면으로 갑니다.
+    - 사용자 메뉴 정리
+  - 어디서: 모든 페이지의 헤더, 새 라우트 `/search`
+  - 완료 조건:
+    - 버튼 5개가 모두 동작하거나 "아직 안 됨"을 알립니다.
+    - e2e를 추가해 `npm run test`가 통과합니다.
+    - 375 / 768 / 1440px에서 직접 확인합니다.
+- **6축 위치:** 실행(task 단위 실행), 검증(테스트 먼저, e2e)
+
+## 확인한 사실
+- **헤더:**
+  - `Header.tsx`는 서버 컴포넌트입니다. 검색·알림 버튼에 `onClick`도 링크도 없습니다(24·27행).
+  - 알림 수는 `getUnreadNotificationCount()`가 돌려주는 고정값 `mockUnreadNotificationCount = 3`(`mock/user.ts`)입니다. 알림 자체의 타입과 데이터는 없습니다.
+- **사용자 메뉴:**
+  - `UserMenu.tsx`는 shadcn DropdownMenu입니다. 이 DropdownMenu는 Radix 기반이라 `DropdownMenuItem asChild`로 `Link`를 넣을 수 있습니다(`ui/dropdown-menu.tsx`).
+  - 항목 3개에 동작이 없습니다.
+  - `Button`도 `asChild`를 지원합니다(`ui/button.tsx` 47행).
+- **e2e:**
+  - `navigation.spec.ts` 31행이 "프로필 메뉴를 열면 로그아웃 항목이 보인다"를 검사합니다.
+  - 메뉴 명세(`MENU`)에는 `/search`를 넣지 않습니다. 검색은 메뉴가 아니라 헤더 버튼이기 때문입니다.
+- **Next 16 문서:**
+  - `next/form`의 `<Form action="/search">`는 GET 폼입니다. 입력값을 주소의 검색어로 붙여 클라이언트 이동하고, 그 경로를 미리 불러옵니다(`02-components/form.md`).
+  - 탭 제목은 검색어에 따라 바꾸지 않고 "검색"으로 고정합니다. 배운 점(`lessons.md` 55행)의 미리 불러오기 문제 때문입니다.
+- **포커스:**
+  - React는 서버 렌더에서 `autoFocus`를 `autofocus` 속성으로 씁니다(`react-dom-server` 876행).
+  - Next의 이동 뒤 포커스 처리에는 옛 코드(`layout-router.js` 236행, `domNode.focus()`)와 새 코드("focus를 건드리지 않음", 296행)가 함께 있습니다. 그래서 클라이언트 이동 뒤에 자동 포커스가 실제로 되는지는 e2e로 확인해야 합니다.
+- **재사용:**
+  - 결과 표시: `church/ChurchCard`(상세 링크 포함), `event/EventCard`, `common/ArticleRow`, `notice/categoryTones`, `post/categoryTones`
+  - 시각: `formatRelativeTime`(`datetime.ts` 87행), `pickLatest`(`timeline.ts`)
+  - `searchParams` 값 꺼내기: `parseSearchParam`
+- **공지·커뮤니티 페이지의 한 줄 코드가 겹칩니다:** 두 페이지 모두 `ArticleRow`에 meta(날짜·교회)를 직접 조립합니다. 검색 결과에서도 같은 줄이 필요하므로 `NoticeRow`·`PostRow`로 올립니다.
+- **목데이터:**
+  - 교회 id 순서는 1 서연, 2 한강, 3 사랑의, 4 샘물, 5 드림, 6 서울교회입니다.
+  - 서연교회(`church-1`)에는 다가오는 행사 "청년 연합 찬양집회"(2일 뒤)와 공지 "특별새벽기도회에 여러분을 초대합니다"가 있습니다.
+  - 지난 행사는 event-2와 event-6입니다.
+- **배운 점:**
+  - 역할 이름은 기본이 부분 일치라 `exact`로 찾습니다.
+  - 칩에 없는 값을 화면에 다시 적지 않습니다. 주소로 넣은 아무 문구가 이 사이트 화면에 보이게 하지 않기 위함입니다.
+  - "N시간 전"은 서버에서 한 번 계산합니다. 클라이언트에서 다시 계산하면 hydration이 어긋납니다.
+
+## 결정
+- **질문과 답:**
+  - 검색: 통합 검색 페이지
+  - 알림: 알림 목록 드롭다운
+- **정한 것:**
+  - **검색 입구:** 헤더 검색 아이콘은 `/search`로 가는 링크입니다. 검색창은 검색 페이지 맨 위에 하나만 둡니다. 페이지가 열리면 검색창에 포커스가 갑니다. 헤더 안에 따로 펼치는 입력창을 두면 입력창이 둘이 되기 때문입니다.
+  - **매칭:**
+    - 검색어를 띄어쓰기로 나눈 낱말이 **모두** 어느 칸엔가 들어 있어야 맞는 것으로 봅니다(AND, 부분 일치, 영문 대소문자 무시).
+    - 빈 검색어는 결과가 없습니다. 50자를 넘는 부분은 버립니다.
+  - **찾는 칸:**
+    - 교회: 이름, 소개, 담임목사, "시·도 시·군·구", 주소, 태그
+    - 행사: 제목, 교회 이름, 태그
+    - 공지: 제목, 요약, 교회 이름, 분류
+    - 글: 제목, 미리보기, 교회 이름, 분류
+    - 교회 이름으로 찾으면 그 교회의 행사·공지·글도 함께 나옵니다.
+  - **행사는 다가오는 것만** 찾습니다. 지난 행사는 사이트 어디에도 보이지 않기 때문입니다.
+  - **결과 화면:**
+    - 순서는 교회 → 행사 → 공지 → 커뮤니티 글입니다. 결과가 있는 묶음만 보이고, 묶음 제목에 개수를 적습니다.
+    - 위에는 `role="status"`로 "검색 결과 N개"를 적습니다. 검색어는 화면 글로 다시 적지 않고 입력칸에만 둡니다(배운 점).
+    - 결과가 0개면 빈 안내를, 검색어가 없으면 무엇으로 찾을 수 있는지 안내를 보여 줍니다.
+    - 입력칸에는 `key={q}`를 줘서, 주소가 바뀌면 입력칸 값도 다시 맞춥니다.
+  - **결과 묶음 이름과 검색어 이름:** 결과는 `SearchResults { churches, events, notices, posts }`, 주소 검색어 이름은 `q`입니다.
+  - **알림 타입:**
+    - 이름은 `UserNotification`입니다. 브라우저 전역 `Notification`과 겹치지 않게 하기 위함이고, `ChurchEvent`와 같은 이유입니다.
+    - 칸은 `id`, `kind`(`event | notice | church | verification`), `message`, `href`, `createdAt`, `read`입니다.
+  - **알림 목데이터 5개, 안 읽은 것 3개:**
+    - 새 행사·새 공지는 그 교회 상세로 갑니다.
+    - 새 교회 참여도 그 교회 상세로 갑니다.
+    - 대표자 인증 승인은 `/admin`으로 가고, 시각은 인증 목데이터의 승인 시각과 같게 둡니다.
+    - 시각은 다른 목데이터처럼 지금 시각을 기준으로 만듭니다.
+    - 안 읽은 수는 고정값을 지우고 목록에서 셉니다.
+  - **알림 드롭다운:**
+    - 맨 위에 "알림"과 "새 알림 N개"를 적습니다.
+    - 항목은 종류 아이콘, 메시지, "N시간 전", 안 읽음 표시(파란 점과 숨김 글자 "새 알림")로 구성합니다.
+    - 항목 전체가 링크입니다.
+    - 시각 글자는 `Header`(서버)가 계산해 넘깁니다.
+    - 1단계에서는 읽음 상태를 바꾸지 않습니다.
+  - **사용자 메뉴:**
+    - "우리 교회 관리"는 `/admin` 링크로 만듭니다.
+    - "내 정보"와 "로그아웃"은 끈 상태(`disabled`)로 두고, 아래에 "내 정보와 로그아웃은 로그인 기능과 함께 열립니다."를 적습니다. `MyChurchPanel`의 끈 버튼과 안내 문구와 같은 방식입니다.
+    - 역할별 메뉴 분기는 2단계에서 합니다(상위 계획서 243행).
+  - **새 파일 위치:**
+    - 순수 로직: `src/lib/search.ts`
+    - 데이터: `src/lib/data/search.ts`, `src/lib/data/notifications.ts`(알림 수 함수도 `user.ts`에서 옮김), `src/lib/mock/notifications.ts`
+    - 컴포넌트: `src/components/search/SearchForm.tsx`, `src/components/layout/NotificationMenu.tsx`
+
+## Tasks
+- [x] **T1. 검색어 매칭 (순수 로직)**
+  - 파일: `src/lib/search.test.ts`, `src/lib/search.ts`
+  - 의존: 없음
+  - 테스트 먼저(red): `search.test.ts`에 다음 경우를 먼저 쓰고 `npm run test:unit`을 돌립니다. `false`만 돌려주는 빈 `matchesQuery()`로 "맞는다" 경우들이 실패하면 red입니다.
+    - `toSearchTerms`: 앞뒤·중복 공백 정리, 소문자로 바꾸기, 50자에서 자르기, 빈 검색어는 `[]`
+    - `matchesQuery(fields, terms)`:
+      - 부분 일치("서연" → "서연교회")
+      - 여러 낱말은 모두 맞아야 함. 낱말이 서로 다른 칸에 있어도 맞음
+      - 하나라도 없으면 안 맞음
+      - 대소문자 무시
+      - 낱말이 없으면 안 맞음
+  - 확인(동작 증거):
+    - `npm run test:unit` 통과
+    - AND를 OR(`every` → `some`)로 바꾸면 "하나라도 없으면 안 맞음"만 실패하는지 확인하고 되돌립니다.
+  - 증거 (2026-10-06):
+    - red: 빈 구현(`[query]`, 늘 `false`)에서 `Tests  8 failed | 3 passed (11)`. 통과한 3개는 "안 맞는다" 경우로, 빈 구현의 `false`와 우연히 같음
+    - green: `Tests  11 passed (11)`. 전체 `npm run test:unit`은 `Tests  90 passed (90)`이고, lint·build도 통과
+    - 깨뜨려 보기: `every`를 `some`으로 바꾸면 `FAIL … 낱말 하나라도 없으면 안 맞는다`만 실패함(`1 failed | 10 passed`). 되돌린 뒤 11개 통과
+    - 테스트 하나를 더함: "두 칸에 걸친 글자는 맞지 않는다". 칸을 이어 붙여 찾는 구현을 막기 위함
+- [x] **T2. 검색 데이터 계층**
+  - 파일: `src/lib/types.ts`(`SearchResults`), `src/lib/data/search.ts`(`searchSite(query)`)
+  - 의존: T1
+  - 테스트 먼저(red): 해당 없음. 이미 있는 데이터 함수(`getChurches`, `getUpcomingEvents`, `getRecentNotices`, `getRecentPosts`)의 결과를 T1의 함수로 거르기만 합니다. 판단은 T1이 테스트합니다.
+  - 확인(동작 증거): jiti 임시 스크립트로 출력을 봅니다.
+    - `searchSite("서연")`: 교회는 서연교회 1곳이고, 행사에 "청년 연합 찬양집회", 공지에 "특별새벽기도회에 여러분을 초대합니다"가 나와야 합니다.
+    - `searchSite("")`: 네 묶음이 모두 비어야 합니다.
+    - `searchSite("서울 용산구")`: 용산구 교회만 나와야 합니다.
+  - 증거 (2026-10-06): jiti 출력
+    - `"서연"`: 교회 `서연교회(서울 용산구)`, 행사 `청년 연합 찬양집회/서연교회`, 공지 `특별새벽기도회에 여러분을 초대합니다/서연교회`, 글 없음
+    - `""`, `"   "`, `"없는검색어"`: 네 묶음 모두 `[]`
+    - `"서울 용산구"`: 교회 `서연교회`만 나옴. 목데이터의 용산구 교회는 서연교회 하나뿐임
+    - `"청년 찬양"`: 교회 `샘물교회`(태그·소개), 행사 `청년 연합 찬양집회`, 글 `청년부 연합 예배가…/한강교회`
+    - lint·build 통과
+- [x] **T3. 공지·글 한 줄을 공통 컴포넌트로 올리기 (동작 그대로)**
+  - 파일: `src/components/notice/NoticeRow.tsx`, `src/components/post/PostRow.tsx`, `src/app/notices/page.tsx`, `src/app/community/page.tsx`
+  - 의존: 없음
+  - 테스트 먼저(red): 해당 없음. 화면 동작이 바뀌지 않고, 이미 있는 e2e(`notices.spec.ts`, `community.spec.ts`)가 지킵니다.
+  - 확인(동작 증거): `npm run test:e2e -- -g "공지|커뮤니티"`가 고치기 전과 같이 통과하고, lint·build가 통과합니다.
+  - 증거 (2026-10-06):
+    - `npx playwright test e2e/notices.spec.ts e2e/community.spec.ts` 결과 `19 passed (12.3s)`. webServer가 `npm run build`를 함께 돌림
+    - lint 통과
+    - 교회 상세(`churches/[id]/page.tsx`)와 대표자 관리(`MyChurchPanel`)의 공지 줄은 그대로 둠. 그 교회의 공지만 보여 주는 곳이라 meta에 교회 이름이 없는 다른 모양이기 때문
+- [x] **T4. 검색 페이지와 헤더 검색 버튼**
+  - 파일: `e2e/search.spec.ts`, `src/app/search/page.tsx`, `src/components/search/SearchForm.tsx`, `src/components/layout/Header.tsx`
+  - 의존: T2, T3
+  - 테스트 먼저(red): `search.spec.ts`를 먼저 쓰고 `npm run test:e2e -- -g "검색"`을 돌립니다. 페이지와 링크가 없어서 새 테스트만 실패하면 red입니다.
+    - 홈에서 헤더 "검색"을 누르면 `/search`로 가고 검색창에 포커스가 있습니다.
+    - "서연"을 입력하고 Enter를 누르면 주소가 `/search?q=서연`이 됩니다. 교회 묶음에 "서연교회", 행사 묶음에 "청년 연합 찬양집회"가 보입니다.
+    - 결과의 "서연교회"를 누르면 `/churches/church-1`로 갑니다.
+    - "청년 찬양"(낱말 두 개)으로 "청년 연합 찬양집회"를 찾습니다.
+    - 맞는 것이 없는 검색어로는 빈 안내가 나옵니다.
+    - 탭 제목은 "검색 | 함께하는 교회"입니다.
+  - 확인(동작 증거):
+    - `npm run test` 전부 통과
+    - 개발 서버에서 375 / 768 / 1440px로 결과 화면을 보고, 가로 스크롤이 없는지 확인합니다.
+  - 증거 (2026-10-06):
+    - red: 페이지와 링크가 없어서 `search.spec.ts`의 새 테스트가 모두 실패함. 예: `locator.click: Timeout 5000ms exceeded`(헤더 링크 없음), 404 때문에 `브라우저 콘솔 에러`
+    - green: `search.spec.ts` 결과 `12 passed (17.1s)`. 클라이언트 이동 뒤 검색창 포커스도 통과해서, 리스크로 적은 ref 포커스는 필요 없었음
+    - 전체 `npm run test` 결과 단위 `Tests  90 passed (90)`, e2e `144 passed (51.3s)`. lint 통과
+    - 화면: 개발 서버에서 `/search?q=서연`을 375 / 768 / 1440px로, `/search`(안내)를 375px로, 결과 0개를 1440px로 봄. 모두 `overflow: false`
+    - 입력칸의 `key`는 지움(변경 이력 참고)
+  - 재확인 (2026-10-06, 리뷰 반영 뒤): "공백뿐인 검색어는 검색어 없이 들어온 것과 같다" e2e를 먼저 써서 red를 봄(안내 문구 `element(s) not found`). 고친 뒤 `search.spec.ts` 결과 `13 passed (17.8s)`, 전체 `150 passed (58.2s)`, 단위 `90 passed`
+- [x] **T5. 알림 데이터 계층**
+  - 파일: `src/lib/types.ts`(`UserNotification`), `src/lib/mock/notifications.ts`, `src/lib/data/notifications.ts`, `src/lib/data/user.ts`, `src/lib/mock/user.ts`(고정 알림 수 지우기), `src/components/layout/Header.tsx`(import 경로)
+  - 의존: 없음
+  - 테스트 먼저(red): 해당 없음. 목데이터를 기존 `pickLatest`로 최신순으로 정렬하고 안 읽은 것을 세기만 합니다.
+  - 확인(동작 증거):
+    - jiti 출력에서 `getNotifications()`가 5개를 최신순으로 돌려주고, `getUnreadNotificationCount()`가 3인지 봅니다.
+    - 알림의 `href`가 가리키는 교회 id가 목데이터에 있고, 메시지의 행사·공지 제목이 그 교회의 목데이터와 같은지 스크립트로 확인합니다.
+    - 헤더의 "알림 3개" 표시가 그대로인지 봅니다.
+  - 증거 (2026-10-06): jiti 출력
+    - 최신순 5개: `● event 2시간 전 /churches/church-5 드림교회에서 새 행사를 올렸습니다: 다음세대 말씀 집회` → `● church 1일 전 /churches/church-15` → `● notice 3일 전 /churches/church-2 한강교회 새 공지: 지역 연합 기도회 장소가 변경되었습니다` → `notice 2026. 9. 25 /churches/church-4` → `verification 2026. 8. 30 /admin`
+    - `count: 5 unread: 3`, `newest first: true`
+    - 교회 상세로 가는 알림 4개 모두 교회가 있음. 메시지가 그 교회 이름으로 시작하고, 행사·공지 제목이 그 교회 상세의 목록에 있음(`title on page: true`)
+    - 개발 서버 홈의 헤더가 `aria-label="알림 3개"`
+    - 단위 `Tests  90 passed (90)`, lint·build 통과
+- [x] **T6. 알림 드롭다운**
+  - 파일: `e2e/header.spec.ts`, `src/components/layout/NotificationMenu.tsx`, `src/components/layout/Header.tsx`
+  - 의존: T5
+  - 테스트 먼저(red): `header.spec.ts`에 다음을 먼저 쓰고 `npm run test:e2e -- -g "알림"`을 돌립니다. 메뉴가 없어서 실패하면 red입니다.
+    - "알림 3개" 버튼을 누르면 알림 5개와 "새 알림 3개"가 보입니다.
+    - 새 공지 알림을 누르면 그 교회 상세로 가고, 그 공지 제목이 보입니다.
+    - 인증 승인 알림을 누르면 `/admin`으로 갑니다.
+  - 확인(동작 증거):
+    - `npm run test` 통과
+    - 375px에서 드롭다운이 화면 밖으로 넘치지 않는지 봅니다.
+    - Tab·화살표 키로 알림 항목을 오갈 수 있는지 봅니다.
+  - 증거 (2026-10-06):
+    - red: 메뉴가 없어서 `header.spec.ts`의 4개가 `expect(locator).toBeVisible() failed … element(s) not found`로 실패함
+    - green: `header.spec.ts` 결과 `4 passed (13.4s)`. 전체 `npm run test`는 단위 `Tests  90 passed (90)`, e2e `148 passed (48.7s)`. lint 통과
+    - 키보드: 알림 버튼에서 Enter를 누르면 첫 항목에 포커스가 감. ArrowDown을 두 번 누르면 "한강교회 새 공지…"로 가고, Enter를 누르면 `/churches/church-2`로 감
+    - 화면: 개발 서버 홈에서 375 / 768 / 1440px로 드롭다운을 엶. 모두 `overflow: false`이고, 375px에서도 양옆 16px 안에 들어옴
+- [x] **T7. 사용자 메뉴 정리**
+  - 파일: `e2e/header.spec.ts`, `e2e/navigation.spec.ts`(옛 프로필 메뉴 테스트를 `header.spec.ts`로 옮김), `src/components/layout/UserMenu.tsx`
+  - 의존: T6(같은 테스트 파일)
+  - 테스트 먼저(red): 다음을 먼저 쓰고 `npm run test:e2e -- -g "프로필"`을 돌립니다. 지금은 링크가 아니고 꺼져 있지도 않아서 실패하면 red입니다.
+    - 프로필 메뉴의 "우리 교회 관리"를 누르면 `/admin`으로 갑니다.
+    - "로그아웃"·"내 정보"는 `aria-disabled="true"`이고 안내 문구가 보입니다.
+  - 확인(동작 증거): `npm run test` 통과. 375px와 1440px에서 메뉴가 펼쳐진 모습을 봅니다.
+  - 증거 (2026-10-06):
+    - red: `'우리 교회 관리'…` 테스트는 `Expected: "http://localhost:3100/admin"`, `Received: "…/events"`로 실패하고, 끈 항목 테스트는 `aria-disabled` 기대 `"true"`, 실제 `""`로 실패함
+    - green: `header.spec.ts`와 `navigation.spec.ts`를 함께 돌려 `16 passed (17.7s)`. lint 통과
+    - 전체 `npm run test`: 개발 서버를 켠 채 돌렸을 때 `church.spec.ts`의 "교회 이름, 탭 제목…" 1개가 실패함(`1 failed, 148 passed`). 그 테스트만 3번 돌리면 모두 통과했음. CLAUDE.md에 적힌 부하 문제로 보고 개발 서버를 끈 뒤 다시 돌려 `149 passed (47.9s)`, 단위 `Tests  90 passed (90)`
+    - 화면: 375 / 1440px에서 메뉴를 엶. "우리 교회 관리"는 켜져 있고, "내 정보"와 "로그아웃"은 흐리게 보이며, 안내 문구가 두 줄로 들어감. 가로 넘침 없음
+    - 항목 순서는 누를 수 있는 "우리 교회 관리"를 맨 위에 두고, 끈 "내 정보", 구분선, "로그아웃", 안내 순서로 둠
+- [x] **T8. 문서**
+  - 파일: `CLAUDE.md`(Architecture에 검색 라우트, `search.ts`, `search/`·`NotificationMenu`·`NoticeRow`·`PostRow` 추가), `docs/plans/2026-09-30-church-community.md`(변경 이력), `docs/lessons.md`(새 함정이 있으면)
+  - 의존: T1~T7
+  - 테스트 먼저(red): 해당 없음. 문서만 바꿉니다.
+  - 확인(동작 증거):
+    - `grep -n "search" CLAUDE.md`로 새 항목을 확인합니다.
+    - 변경 이력에 이 계획서 링크가 있는지 봅니다.
+  - 증거 (2026-10-06):
+    - `grep -n "search" CLAUDE.md`: 20행(라우트 `search: ?q=`), 29행(`src/components/search/`), 39행(`search.ts`)
+    - 상위 계획서 변경 이력에 이 계획서 링크 1곳
+    - 배운 점에 새 항목 둘("검색어만 바뀌는 이동도 페이지를 새로 그린다", "프로젝트 밖 스크립트는 Playwright를 절대 경로로 가져온다")을 넣음. 기존 "부하가 크면" 항목에는 이번 기록을 덧붙임
+
+## 리스크와 멈출 조건
+- **클라이언트 이동 뒤 자동 포커스가 안 될 수 있음:** Next의 이동 뒤 포커스 처리가 `autoFocus`보다 늦게 돌면 포커스를 빼앗깁니다. 그러면 `SearchForm`에서 ref로 마운트 뒤에 포커스를 줍니다. 그래도 안 되면 포커스 요구를 빼기 전에 묻습니다.
+- **e2e 흔들림:** 드롭다운 클릭은 열림 애니메이션이 끝나야 안정적입니다. 기존 프로필 테스트처럼 `getByRole("menuitem")`이 보일 때까지 기다린 뒤 누릅니다.
+- **정적 홈의 알림 시각:** 홈은 빌드 때 그려지므로 헤더의 "N시간 전"도 빌드 시각에 고정됩니다. 홈 칸들과 같은 이미 알려진 문제이고, 배포 작업에서 다시 그리는 주기를 정할 때 함께 다룹니다.
+- 계획 밖 결정(범위·데이터 구조 변경, 새 의존성, 되돌리기 어려운 작업)이 필요해지면 다음 task로 넘어가지 않고 사용자에게 묻습니다.
+
+## 검증
+- 전체 완료 조건: `npm run test:unit && npm run lint && npm run build`, `npm run test`
+- 화면 확인: `npm run dev`(3000)에서 375 / 768 / 1440px로 다음을 봅니다.
+  - `/search?q=서연`
+  - `/search`(안내 화면)
+  - 결과 0개 화면
+  - 알림 드롭다운과 프로필 메뉴가 펼쳐진 모습
+- 일부러 깨뜨려 보기: 깨뜨려서 테스트가 잡는지 확인한 뒤 되돌리고, `npm run test`가 다시 통과하는지 봅니다.
+  - 매칭을 OR로 바꾸면 단위 테스트가 잡아야 합니다.
+  - 알림 `href`를 다른 교회로 바꾸면 e2e가 잡아야 합니다.
+
+## 범위 밖
+- 알림 읽음 처리, "모든 알림" 페이지, 실시간 알림. 2단계 `notifications` 테이블과 함께 합니다.
+- 검색 자동완성, 글자 강조, 지난 행사 검색, 결과 페이지 나누기, DB 전문 검색. 2단계에서 정합니다.
+- 행사·공지·글 상세 페이지. 그래서 검색 결과의 행사·공지·글은 목록 페이지처럼 링크 없이 보여 줍니다.
+- 로그인·로그아웃 실제 동작, 역할별 메뉴 분기
+- 모바일 메뉴(Sheet)에 검색 넣기. 헤더 검색 아이콘이 모든 폭에서 보입니다.
+
+## 변경 이력
+<!-- run-plan이 계획과 달라진 점을 날짜·내용·이유로 적는다 -->
+- 2026-10-06 (T4): 검색 입력칸에 `key={q}`를 주지 않음. 지우고 "결과 화면에서 헤더 '검색'으로 다시 오면 입력칸이 비어 있다"를 돌려도 통과했음. App Router는 검색어가 다른 주소를 다른 페이지 칸으로 보고 새로 그리므로 `defaultValue`가 다시 들어감
+- 2026-10-06 (리뷰 반영, T4): 공백뿐인 검색어(`?q=+++`)를 검색어 없음으로 봄. 원래는 `parseSearchParam`이 빈 값만 거르는데 `toSearchTerms`는 공백을 낱말 없음으로 봐서, 처음 안내 대신 "검색 결과 0개"와 빈 안내가 나왔음(독립 리뷰 지적). 페이지에서 `trim()`한 뒤 비면 `null`로 봄
+- 2026-10-06 (T5): 알림 메시지의 교회 이름·행사·공지 제목과 공지 알림의 시각은 문구로 적지 않고 그 목데이터(`createMockEvents`, `createMockNotices`, `createMockVerification`, `mockChurches`)에서 가져옴. 원본이 바뀌어도 알림이 어긋나지 않게 하기 위함이고, 없는 id를 가리키면 오류를 냄
+- 2026-10-06 (T4): `role="status"`("검색 결과 N개")는 검색어가 없을 때도 빈 채로 같은 자리에 둠. 처음 검색할 때 새로 끼워진 알림 영역은 읽히지 않을 수 있기 때문(배운 점의 탭 제목 항목)
+
+## 검증 결과
+<!-- run-plan이 마무리 검증의 실제 출력 근거를 적는다. 리뷰에서 반영하지 않은 지적은 이유와 함께 적는다 -->
+- **전체 테스트 (2026-10-06, 리뷰 반영 뒤, 개발 서버 끔):**
+  - 첫 실행은 `1 failed, 149 passed (58.0s)`였음. 실패한 것은 `admin.spec.ts`의 "인증 상태와 승인일을 보여 준다"로, 이번 변경과 상관없는 화면임. 그 테스트만 5번 돌리면 `5 passed`
+  - 다시 돌린 전체 실행은 단위 `Tests  90 passed (90)`, e2e `150 passed (58.2s)`. 시작 전 부하 평균이 12.31로 이미 높았음. 배운 점 "부하가 크면" 항목과 같은 흔들림으로 봄
+- **화면 확인 (개발 서버 3000):**
+  - `/search?q=서연`: 375 / 768 / 1440px
+  - `/search` 안내: 375px
+  - 결과 0개: 1440px
+  - 알림 드롭다운: 375 / 768 / 1440px
+  - 프로필 메뉴: 375 / 1440px
+  - 모두 `overflow: false`. 교회 카드·행사 카드·공지 줄이 목록 페이지와 같은 모양이고, 드롭다운은 375px에서도 양옆 16px 안에 들어옴
+- **일부러 깨뜨려 보기:**
+  - 매칭 AND → OR(T1): `FAIL … 낱말 하나라도 없으면 안 맞는다`(`1 failed | 10 passed`)
+  - 공지 알림의 `href`를 `/churches/church-1`로 바꿈: `header.spec.ts`의 "새 공지 알림을 누르면…"이 `Expected: "…/churches/church-2"`, `Received: "…/churches/church-1"`로 실패함(`1 failed, 5 passed`)
+  - 두 경우 모두 되돌린 뒤 위 전체 테스트가 통과함
+- **커밋 (2026-10-06):** task 단위 커밋 6개(3a067d4·9024f81·2b14eaa·b8b0b1e·38f98e9와 문서). 섞인 파일(`types.ts`, `Header.tsx`, `header.spec.ts`)은 커밋별 중간 내용을 index에만 올려 나눔. 알림 커밋은 pre-commit에서 한 번 거부됨: `admin.spec.ts`의 "페이지 제목과 내 교회 탭…"이 `page.route: Test timeout of 30000ms exceeded`. 화면 코드가 돌기 전에 멈춘 것이고, 그때 사용자의 Chrome 탭 두 개가 CPU 165%·107%를 쓰고 있었음(부하 평균 13.5). `--no-verify` 없이 다시 커밋해 `150 passed`
+- **독립 리뷰 (`/code-review medium`):** 지적 1개(공백뿐인 검색어)를 재현으로 확인해 반영함(변경 이력 참고). 반영하지 않은 지적은 없음

@@ -16,26 +16,29 @@
 ## Architecture
 ```
 src/app/                  라우트. 홈, 교회 지도(map), 교회 상세(churches/[id], 없는 id는 404), 행사 목록(events),
-                          공지 목록(notices), 커뮤니티 글 목록(community), 대표자 관리(admin: ?tab=register는 신청 탭)
-src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
+                          공지 목록(notices), 커뮤니티 글 목록(community), 대표자 관리(admin: ?tab=register는 신청 탭),
+                          통합 검색(search: ?q=, 교회·다가오는 행사·공지·글)
+src/components/layout/    Header(서버: 알림 시각 글자도 계산) + Logo, MainNav, MobileNav, UserMenu, NotificationMenu(클라이언트)
 src/components/home/      홈 섹션 (HeroBanner, StatCards, MapPreview, RecommendedChurches, RepRegisterCta,
                           UpcomingEvents, RecentNotices, CommunityFeed)과 칸 틀 SectionCard, 목록 한 줄 FeedRow
 src/components/church/    교회 카드 (ChurchCard: 이름 링크를 카드 전체로 넓힘, FavoriteButton), 지도 페이지 목록의 한 줄
                           (ChurchListItem), 교회 정보 목록 (ChurchFacts, 교회 상세와 대표자 관리가 같이 씀)
 src/components/event/     행사 카드 (EventCard, 홈과 행사 페이지가 같이 씀)
-src/components/notice/    공지 분류 배지 색 (categoryTones, 홈 칸과 공지 페이지가 같이 씀)
-src/components/post/      커뮤니티 글 분류 배지 색 (categoryTones, 홈 칸과 커뮤니티 페이지가 같이 씀)
+src/components/notice/    공지 분류 배지 색 (categoryTones, 홈 칸과 공지 페이지가 같이 씀), 공지 한 줄 (NoticeRow, 공지 페이지와 검색)
+src/components/post/      커뮤니티 글 분류 배지 색 (categoryTones, 홈 칸과 커뮤니티 페이지가 같이 씀), 글 한 줄 (PostRow, 커뮤니티와 검색)
+src/components/search/    검색창 (SearchForm: next/form의 GET 폼, 검색어가 없을 때만 자동 포커스)
 src/components/admin/     대표자 관리 (AdminTabs: 내 교회·신청 탭, MyChurchPanel: 대표자 대시보드,
                           ChurchRegisterForm: 교회 등록·인증 신청 폼, 입력 검사 뒤 데모 접수 화면)
 src/components/map/       카카오맵 (kakao.ts: 쓰는 SDK API의 타입과 한 번만 불러오는 로더, ChurchMap: 핀 지도(교회가 한 곳이면 수준 4),
                           ChurchMapExplorer: 지도 페이지의 목록 + 지도, MapFallback: 키가 없거나 SDK 실패 때의 대체 화면)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (TagList, HorizontalScroller,
-                          목록 페이지의 칩 필터 FilterChips, 공지·커뮤니티 페이지의 한 줄 ArticleRow)
+                          목록 페이지의 칩 필터 FilterChips, 공지·글 목록의 한 줄 틀 ArticleRow)
 src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
 src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
-src/lib/geo.ts, timeline.ts, datetime.ts, tags.ts, categories.ts, search-params.ts, ownership.ts, church-registration.ts
-                          순수 로직: 지도 범위·지역 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기, 태그 모으기·거르기,
-                          분류 모으기·거르기, 주소 검색어 값 꺼내기, 교회별 거르기, 교회 등록 신청 입력 검사.
+src/lib/geo.ts, timeline.ts, datetime.ts, tags.ts, categories.ts, search-params.ts, ownership.ts, church-registration.ts,
+search.ts                 순수 로직: 지도 범위·지역 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기, 태그 모으기·거르기,
+                          분류 모으기·거르기, 주소 검색어 값 꺼내기, 교회별 거르기, 교회 등록 신청 입력 검사,
+                          검색어 낱말 나누기·맞추기(낱말이 모두 들어 있어야 맞음).
                           짝 테스트(<이름>.test.ts)가 같은 폴더에 있고 Vitest는 UTC에서 돈다
 src/lib/types.ts          도메인 타입과 분류 순서 상수(NOTICE_CATEGORIES, POST_CATEGORIES)
 src/lib/data/             데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로

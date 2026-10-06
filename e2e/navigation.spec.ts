@@ -27,12 +27,6 @@ test.describe("데스크톱 메뉴 (1440px)", () => {
     await page.goto("/events");
     await expect(page).toHaveTitle("행사 | 함께하는 교회");
   });
-
-  test("프로필 메뉴를 열면 로그아웃 항목이 보인다", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /김은혜 집사님 메뉴/ }).click();
-    await expect(page.getByRole("menuitem", { name: "로그아웃" })).toBeVisible();
-  });
 });
 
 test.describe("모바일 메뉴 (375px)", () => {

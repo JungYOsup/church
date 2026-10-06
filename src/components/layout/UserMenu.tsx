@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -45,10 +46,16 @@ export function UserMenu({ user }: { user: UserProfile }) {
           <span className="block text-xs font-normal text-muted-foreground">{affiliation}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="lg:hidden" />
-        <DropdownMenuItem>내 정보</DropdownMenuItem>
-        <DropdownMenuItem>우리 교회 관리</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/admin">우리 교회 관리</Link>
+        </DropdownMenuItem>
+        {/* 로그인이 있어야 뜻이 있는 항목은 끈 채로 보여 주고, 언제 열리는지 아래에 적는다(대표자 관리의 끈 버튼과 같은 방식) */}
+        <DropdownMenuItem disabled>내 정보</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>로그아웃</DropdownMenuItem>
+        <DropdownMenuItem disabled>로그아웃</DropdownMenuItem>
+        <p className="px-1.5 pt-1 pb-1.5 text-xs text-muted-foreground break-keep">
+          내 정보와 로그아웃은 로그인 기능과 함께 열립니다.
+        </p>
       </DropdownMenuContent>
     </DropdownMenu>
   );
