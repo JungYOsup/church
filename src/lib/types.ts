@@ -75,13 +75,17 @@ export interface Notice {
   publishedAt: string;
 }
 
-export type PostCategory = "기도제목" | "사역나눔" | "선교소식" | "봉사후기";
+/** 커뮤니티 글 분류. 이 순서가 커뮤니티 페이지 칩의 순서다 */
+export const POST_CATEGORIES = ["기도제목", "사역나눔", "선교소식", "봉사후기"] as const;
+export type PostCategory = (typeof POST_CATEGORIES)[number];
 
 /** 커뮤니티 글. 교회는 글쓴이가 속한 교회다 */
 export interface Post {
   id: string;
   churchId: string;
   title: string;
+  /** 목록에 보여 줄 본문 앞부분 */
+  excerpt: string;
   category: PostCategory;
   /** 작성 시각 (ISO 8601) */
   createdAt: string;
