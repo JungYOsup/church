@@ -13,6 +13,7 @@ import {
   Plus,
   ShieldCheck,
 } from "lucide-react";
+import { ChurchFacts } from "@/components/church/ChurchFacts";
 import { ArticleRow } from "@/components/common/ArticleRow";
 import { TagList } from "@/components/common/TagList";
 import { NOTICE_CATEGORY_TONES } from "@/components/notice/categoryTones";
@@ -70,18 +71,7 @@ export async function MyChurchPanel({ user }: { user: UserProfile }) {
             <div className="flex min-w-0 flex-col gap-2 break-keep">
               <h3 className="text-lg font-bold text-foreground">{church.name}</h3>
               <p className="text-muted-foreground">{church.slogan}</p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                <dt className="text-muted-foreground">담임목사</dt>
-                <dd>{church.pastorName} 목사</dd>
-                <dt className="text-muted-foreground">지역</dt>
-                <dd>
-                  {church.region} {church.district}
-                </dd>
-                <dt className="text-muted-foreground">주소</dt>
-                <dd>{church.address}</dd>
-                <dt className="text-muted-foreground">교인 수</dt>
-                <dd>{church.memberCount.toLocaleString("ko-KR")}명</dd>
-              </dl>
+              <ChurchFacts church={church} />
               <TagList tags={church.tags} />
             </div>
           </div>

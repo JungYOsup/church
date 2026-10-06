@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, fakeMapCenter, moveFakeMap, test } from "./fixtures";
 
 // 교회 지도 명세. 목데이터(src/lib/mock/churches.ts)를 가져오지 않고 직접 적는다.
@@ -34,6 +34,9 @@ const churchItems = (page: Page) => churchList(page).getByRole("listitem");
 const pin = (page: Page, name: string) => mapArea(page).getByRole("button", { name, exact: true });
 // 목록 줄 버튼의 이름은 교회 이름으로 시작하고 지역·목사·인원이 이어진다
 const row = (page: Page, name: string) => churchList(page).getByRole("button", { name });
+/** 고른 교회의 상세 링크. 목록 줄 아래와 지도의 사진 카드에 같은 이름으로 있다 */
+const detailLink = (scope: Locator, name: string) =>
+  scope.getByRole("link", { name: `${name} 자세히 보기`, exact: true });
 // 기쁨교회(경기 수원시)의 좌표
 const JOY_CHURCH = { lat: 37.2636, lng: 127.0286 };
 // 화면에 보이는 이름표 수. 숨긴 이름표도 버튼 이름으로는 남으므로(sr-only) 폭으로 가린다.
@@ -219,8 +222,8 @@ test.describe("교회 고르기", () => {
     await pin(page, "서연교회").click();
     await expect(pin(page, "서연교회")).toHaveAttribute("aria-pressed", "true");
     await expect(row(page, "서연교회")).toHaveAttribute("aria-pressed", "true");
-    // 사진은 장식(alt="")이라 img 역할이 없어 요소로 찾는다
-    await expect(pin(page, "서연교회").locator("img")).toBeVisible();
+    // 핀 위 사진 카드는 상세로 가는 링크다. 사진은 장식(alt="")이라 img 역할이 없어 요소로 찾는다
+    await expect(detailLink(mapArea(page), "서연교회").locator("img")).toBeVisible();
     // 멀리 볼 때도 고른 교회의 이름표만은 보인다
     await expect.poll(() => visibleLabelCount(page)).toBe(1);
   });
@@ -283,6 +286,28 @@ test.describe("교회 고르기", () => {
     await expect(churchList(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 6개");
     await expect(churchItems(page)).toHaveCount(6);
     await expect(pin(page, "기쁨교회")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("고른 교회의 목록 줄 아래에 상세 링크가 생기고, 고르기를 풀면 사라진다", async ({ page }) => {
+    await page.goto("/map");
+    await expect(detailLink(churchList(page), "서연교회")).toHaveCount(0);
+    await row(page, "서연교회").click();
+    await expect(detailLink(churchList(page), "서연교회")).toBeVisible();
+    await row(page, "서연교회").click();
+    await expect(detailLink(churchList(page), "서연교회")).toHaveCount(0);
+
+    await row(page, "서연교회").click();
+    await detailLink(churchList(page), "서연교회").click();
+    await expect(page).toHaveURL("/churches/church-1");
+    await expect(page.getByRole("heading", { level: 1, name: "서연교회", exact: true })).toBeVisible();
+  });
+
+  test("지도의 사진 카드도 고른 교회의 상세 링크다", async ({ page }) => {
+    await page.goto("/map");
+    await pin(page, "기쁨교회").click();
+    await expect(detailLink(mapArea(page), "기쁨교회")).toHaveAttribute("href", "/churches/church-11");
+    // 고르지 않은 교회에는 링크가 없다
+    await expect(mapArea(page).getByRole("link")).toHaveCount(1);
   });
 
   test("키보드로 목록 줄을 골라도 같다", async ({ page }) => {
@@ -350,5 +375,14 @@ test.describe("지역 필터", () => {
     await churchList(page).getByRole("link", { name: "전체 교회 보기", exact: true }).click();
     await expect(page).toHaveURL("/map");
     await expect(churchItems(page)).toHaveCount(ALL_CHURCHES.length);
+  });
+});
+
+test.describe("지도를 쓸 수 없을 때의 상세 링크", () => {
+  test("목록에서 고른 교회의 상세 링크로 갈 수 있다", async ({ page }) => {
+    await page.goto("/map");
+    await row(page, "한강교회").click();
+    await detailLink(churchList(page), "한강교회").click();
+    await expect(page).toHaveURL("/churches/church-2");
   });
 });
