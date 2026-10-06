@@ -15,18 +15,19 @@
 
 ## Architecture
 ```
-src/app/                  라우트. 홈, 교회 지도(map), 행사 목록(events), 공지 목록(notices), 커뮤니티 글 목록(community),
-                          대표자 관리(admin: ?tab=register는 신청 탭)
+src/app/                  라우트. 홈, 교회 지도(map), 교회 상세(churches/[id], 없는 id는 404), 행사 목록(events),
+                          공지 목록(notices), 커뮤니티 글 목록(community), 대표자 관리(admin: ?tab=register는 신청 탭)
 src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
 src/components/home/      홈 섹션 (HeroBanner, StatCards, MapPreview, RecommendedChurches, RepRegisterCta,
                           UpcomingEvents, RecentNotices, CommunityFeed)과 칸 틀 SectionCard, 목록 한 줄 FeedRow
-src/components/church/    교회 카드 (ChurchCard, FavoriteButton)와 지도 페이지 목록의 한 줄 (ChurchListItem)
+src/components/church/    교회 카드 (ChurchCard: 이름 링크를 카드 전체로 넓힘, FavoriteButton), 지도 페이지 목록의 한 줄
+                          (ChurchListItem), 교회 정보 목록 (ChurchFacts, 교회 상세와 대표자 관리가 같이 씀)
 src/components/event/     행사 카드 (EventCard, 홈과 행사 페이지가 같이 씀)
 src/components/notice/    공지 분류 배지 색 (categoryTones, 홈 칸과 공지 페이지가 같이 씀)
 src/components/post/      커뮤니티 글 분류 배지 색 (categoryTones, 홈 칸과 커뮤니티 페이지가 같이 씀)
 src/components/admin/     대표자 관리 (AdminTabs: 내 교회·신청 탭, MyChurchPanel: 대표자 대시보드,
                           ChurchRegisterForm: 교회 등록·인증 신청 폼, 입력 검사 뒤 데모 접수 화면)
-src/components/map/       카카오맵 (kakao.ts: 쓰는 SDK API의 타입과 한 번만 불러오는 로더, ChurchMap: 핀 지도,
+src/components/map/       카카오맵 (kakao.ts: 쓰는 SDK API의 타입과 한 번만 불러오는 로더, ChurchMap: 핀 지도(교회가 한 곳이면 수준 4),
                           ChurchMapExplorer: 지도 페이지의 목록 + 지도, MapFallback: 키가 없거나 SDK 실패 때의 대체 화면)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (TagList, HorizontalScroller,
                           목록 페이지의 칩 필터 FilterChips, 공지·커뮤니티 페이지의 한 줄 ArticleRow)
@@ -55,7 +56,7 @@ docs/plans/               계획서와 결정 기록
 - `npm run dev` — 개발 서버 (http://localhost:3000)
 - `npm run lint` — ESLint
 - `npm run build` — 프로덕션 빌드 + 타입 체크
-- `npm run test` — 단위 테스트(`test:unit`) 다음에 Playwright 동작 테스트(`test:e2e`). e2e는 빌드 후 3100 포트에 서버를 띄워 실행한다 (약 40초). 개발 서버를 켠 채 돌리면 부하로 클릭이 흔들리므로 끄고 돌린다. 빌드는 가짜 카카오맵 키로 하므로, 테스트 뒤 `npm run start`로 데모하려면 `npm run build`를 다시 한다
+- `npm run test` — 단위 테스트(`test:unit`) 다음에 Playwright 동작 테스트(`test:e2e`). e2e는 빌드 후 3100 포트에 서버를 띄워 동시에 3개씩 실행한다 (약 40초). 개발 서버를 켠 채 돌리면 부하로 클릭이 흔들리므로 끄고 돌린다. 빌드는 가짜 카카오맵 키로 하므로, 테스트 뒤 `npm run start`로 데모하려면 `npm run build`를 다시 한다
 - `npm run test:unit` — Vitest 단위 테스트(`src/**/*.test.ts`)만. 1초 안팎
 
 ## Rules

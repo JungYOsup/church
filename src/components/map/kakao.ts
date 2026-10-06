@@ -24,8 +24,11 @@ export interface KakaoMap {
     paddingLeft?: number,
   ): void;
   panTo(latlng: KakaoLatLng): void;
+  /** 중심을 곧바로 옮긴다(부드럽게 옮기는 panTo와 달리 애니메이션 없음) */
+  setCenter(latlng: KakaoLatLng): void;
   /** 확대 수준. 숫자가 작을수록 가깝다 */
   getLevel(): number;
+  setLevel(level: number): void;
   /** 지도 칸의 크기가 바뀐 뒤 다시 그린다. 창 크기 변화는 SDK가 알아서 부른다 */
   relayout(): void;
   addControl(control: KakaoZoomControl, position: number): void;

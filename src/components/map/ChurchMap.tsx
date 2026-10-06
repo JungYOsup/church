@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { MapFallback } from "@/components/map/MapFallback";
 import { loadKakaoMaps, type KakaoCustomOverlay, type KakaoMap, type KakaoMaps } from "@/components/map/kakao";
@@ -20,6 +21,8 @@ const INITIAL_LEVEL = 8;
 const LABEL_MAX_LEVEL = 8;
 // 교회에 맞출 때 가장자리 핀이 잘리지 않게 두는 여백(px). 위쪽은 핀 높이만큼 더 준다
 const FIT_PADDING = { top: 56, side: 32 };
+// 교회 한 곳만 받으면(교회 상세) 점 하나에 범위를 맞추면 너무 가까워지므로, 동네가 보이는 이 수준으로 둔다
+const SINGLE_CHURCH_LEVEL = 4;
 
 interface Kakao {
   maps: KakaoMaps;
@@ -42,6 +45,7 @@ interface ChurchMapProps {
 
 /**
  * 교회마다 핀을 꽂은 카카오맵. 처음과 받은 교회가 바뀔 때(지역 필터) 교회가 모두 보이게 맞춘다.
+ * 교회가 한 곳이면(교회 상세) 그 교회를 가운데 두고 동네가 보이는 수준으로 둔다.
  * 키가 없거나 SDK를 불러오지 못하면 같은 자리에 대체 화면을 보여 준다.
  * onSelect가 없으면(홈 칸) 핀은 고를 수 없는 그림이다.
  */
@@ -114,9 +118,15 @@ export function ChurchMap({
   // 교회가 모두 보이게 맞춘다. 실제 SDK는 처음 맞출 때 idle을 보내지 않아서, 맞춘 뒤 직접 일으킨다
   const fitToChurches = useEffectEvent(({ maps, map }: Kakao) => {
     if (churches.length === 0) return;
-    const bounds = new maps.LatLngBounds();
-    for (const church of churches) bounds.extend(new maps.LatLng(church.lat, church.lng));
-    map.setBounds(bounds, FIT_PADDING.top, FIT_PADDING.side, FIT_PADDING.side, FIT_PADDING.side);
+    if (churches.length === 1) {
+      const [church] = churches;
+      map.setLevel(SINGLE_CHURCH_LEVEL);
+      map.setCenter(new maps.LatLng(church.lat, church.lng));
+    } else {
+      const bounds = new maps.LatLngBounds();
+      for (const church of churches) bounds.extend(new maps.LatLng(church.lat, church.lng));
+      map.setBounds(bounds, FIT_PADDING.top, FIT_PADDING.side, FIT_PADDING.side, FIT_PADDING.side);
+    }
     maps.event.trigger(map, "idle");
   });
 
@@ -230,14 +240,6 @@ function ChurchMarker({ kakao, church, selected, showLabel, onSelect }: ChurchMa
 
   const pin = (
     <>
-      {selected && (
-        // 핀 위의 사진 카드. 목데이터 사진은 그 교회의 실제 모습이 아니라 장식으로 둔다
-        <span className="absolute bottom-full left-1/2 mb-3 block w-28 -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white bg-white shadow-md">
-          <span className="relative block aspect-4/3">
-            <Image src={church.imageUrl} alt="" fill sizes="112px" className="object-cover" />
-          </span>
-        </span>
-      )}
       <PinIcon
         className={cn("h-10 w-8 origin-bottom text-primary drop-shadow-md transition-transform", selected && "scale-125")}
       />
@@ -257,21 +259,36 @@ function ChurchMarker({ kakao, church, selected, showLabel, onSelect }: ChurchMa
   );
 
   return createPortal(
-    onSelect ? (
-      <button
-        type="button"
-        aria-pressed={selected}
-        onClick={() => onSelect(church.id)}
-        className="relative block rounded-md outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        {pin}
-      </button>
-    ) : (
-      // 고를 수 없는 핀은 누를 수 있어 보이지 않게 교회 이름이 붙은 그림으로 둔다
-      <span role="img" aria-label={church.name} className="relative block">
-        {pin}
-      </span>
-    ),
+    <span className="relative block">
+      {selected && (
+        // 핀 위의 사진 카드는 그 교회 상세로 가는 링크다. 핀 버튼 안에는 링크를 둘 수 없어 나란히 둔다.
+        // 목데이터 사진은 그 교회의 실제 모습이 아니라 장식으로 둔다
+        <Link
+          href={`/churches/${church.id}`}
+          aria-label={`${church.name} 자세히 보기`}
+          className="absolute bottom-full left-1/2 mb-3 block w-28 -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white bg-white shadow-md outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <span className="relative block aspect-4/3">
+            <Image src={church.imageUrl} alt="" fill sizes="112px" className="object-cover" />
+          </span>
+        </Link>
+      )}
+      {onSelect ? (
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => onSelect(church.id)}
+          className="relative block rounded-md outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {pin}
+        </button>
+      ) : (
+        // 고를 수 없는 핀은 누를 수 있어 보이지 않게 교회 이름이 붙은 그림으로 둔다
+        <span role="img" aria-label={church.name} className="relative block">
+          {pin}
+        </span>
+      )}
+    </span>,
     content,
   );
 }

@@ -58,6 +58,7 @@ interface FakeMapView {
 interface FakeKakaoHandle {
   moveTo(view: FakeMapView, index?: number): void;
   center(index?: number): { lat: number; lng: number };
+  level(index?: number): number;
 }
 // 앱의 전역 Window 타입에 테스트용 속성이 새지 않도록 declare global 대신 여기서만 바꿔 쓴다
 type FakeKakaoWindow = { __fakeKakao: FakeKakaoHandle };
@@ -73,4 +74,9 @@ export function moveFakeMap(page: Page, view: FakeMapView, index = 0) {
 /** 가짜 지도의 지금 중심 좌표 (kakaoSdk: "fake"에서만) */
 export function fakeMapCenter(page: Page, index = 0) {
   return page.evaluate((mapIndex) => (window as unknown as FakeKakaoWindow).__fakeKakao.center(mapIndex), index);
+}
+
+/** 가짜 지도의 지금 확대 수준 (kakaoSdk: "fake"에서만) */
+export function fakeMapLevel(page: Page, index = 0) {
+  return page.evaluate((mapIndex) => (window as unknown as FakeKakaoWindow).__fakeKakao.level(mapIndex), index);
 }

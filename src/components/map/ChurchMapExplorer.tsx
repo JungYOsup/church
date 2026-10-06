@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { ChurchListItem } from "@/components/church/ChurchListItem";
 import { ChurchMap } from "@/components/map/ChurchMap";
 import { filterWithinBounds, type MapBounds } from "@/lib/geo";
@@ -62,8 +64,19 @@ export function ChurchMapExplorer({ churches }: { churches: Church[] }) {
         ) : (
           <ul ref={listRef} role="list" className="flex min-h-0 flex-col gap-2 lg:overflow-y-auto lg:pr-1">
             {visibleChurches.map((church) => (
-              <li key={church.id} data-church-id={church.id}>
+              <li key={church.id} data-church-id={church.id} className="flex flex-col gap-1">
                 <ChurchListItem church={church} selected={church.id === selected} onSelect={toggleSelected} />
+                {/* 줄 전체가 고르기 버튼이라 링크를 그 안에 둘 수 없어, 고른 줄 아래에 따로 둔다 */}
+                {church.id === selected && (
+                  <Link
+                    href={`/churches/${church.id}`}
+                    aria-label={`${church.name} 자세히 보기`}
+                    className="inline-flex items-center gap-0.5 self-end rounded-md px-1 text-sm font-medium text-primary outline-hidden hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    자세히 보기
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

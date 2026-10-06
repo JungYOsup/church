@@ -85,8 +85,21 @@
       );
       fireIdle(this);
     }
+    // 범위의 크기는 그대로 두고 중심만 옮긴다. setBounds처럼 앱이 맞춘 뒤 직접 idle을 일으키므로 보내지 않는다
+    setCenter(latlng) {
+      const halfLat = (this.bounds.getNorthEast().getLat() - this.bounds.getSouthWest().getLat()) / 2;
+      const halfLng = (this.bounds.getNorthEast().getLng() - this.bounds.getSouthWest().getLng()) / 2;
+      this.center = latlng;
+      this.bounds = new LatLngBounds(
+        new LatLng(latlng.getLat() - halfLat, latlng.getLng() - halfLng),
+        new LatLng(latlng.getLat() + halfLat, latlng.getLng() + halfLng),
+      );
+    }
     getLevel() {
       return this.level;
+    }
+    setLevel(level) {
+      this.level = level;
     }
     relayout() {}
     addControl() {}
@@ -153,6 +166,9 @@
     center(index = 0) {
       const { center } = this.maps[index];
       return { lat: center.getLat(), lng: center.getLng() };
+    },
+    level(index = 0) {
+      return this.maps[index].level;
     },
   };
 })();

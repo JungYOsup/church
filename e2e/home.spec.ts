@@ -171,6 +171,30 @@ test.describe("홈 추천 교회", () => {
     await region.getByRole("link", { name: "더보기" }).click();
     await expect(page).toHaveURL("/map");
   });
+
+  test("교회 이름을 누르면 그 교회의 상세 페이지로 간다", async ({ page }) => {
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "추천 교회", exact: true });
+    await region.getByRole("link", { name: "서연교회", exact: true }).click();
+    await expect(page).toHaveURL("/churches/church-1");
+    await expect(page.getByRole("heading", { level: 1, name: "서연교회", exact: true })).toBeVisible();
+  });
+
+  test("카드의 사진 쪽을 눌러도 상세로 가고, 하트는 이동하지 않고 관심 표시만 바꾼다", async ({ page }) => {
+    await page.goto("/");
+    const region = page.getByRole("region", { name: "추천 교회", exact: true });
+    const card = region.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: "한강교회" }) });
+
+    const heart = page.getByRole("button", { name: "한강교회 관심 교회" });
+    await heart.click();
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL("/");
+
+    // 사진 자리(카드 왼쪽 위, 하트는 오른쪽 위)를 누른다. 사진 요소를 직접 누르면 그 위를 덮은 링크가
+    // 클릭을 받는다고 Playwright가 기다리는데, 그것이 바로 카드 전체를 링크로 넓힌 결과다
+    await card.click({ position: { x: 24, y: 24 } });
+    await expect(page).toHaveURL("/churches/church-2");
+  });
 });
 
 test.describe("홈 교회 지도 칸", () => {
