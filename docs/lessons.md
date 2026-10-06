@@ -83,6 +83,28 @@
   - `clsx`와 `tailwind-merge` 대신 shadcn이 배포하는 `cn` 패키지를 설치한다(이상한 패키지가 아니다).
   - `init`은 프리셋을 대화형으로 묻는다. 비대화형으로 돌리려면 `-t next -b radix -p nova`처럼 지정한다.
 
+## 카카오맵
+
+### SDK 오류가 브라우저에는 `ERR_BLOCKED_BY_ORB`로만 보인다
+- **상황:** 등록한 주소(3000)에서도 지도 대신 대체 화면이 나왔다. 브라우저에는 `sdk.js` 요청이 `net::ERR_BLOCKED_BY_ORB`로 실패했다는 것뿐이었다.
+- **원인:** 카카오가 스크립트 대신 JSON 오류(`403 {"errorType":"NotAuthorizedError","message":"App(…) disabled OPEN_MAP_AND_LOCAL service."}`)를 돌려줬고, Chrome이 스크립트 자리의 JSON을 막아(Opaque Response Blocking) 본문이 보이지 않았다. 카카오 앱에서 **카카오맵 사용 설정**이 꺼져 있었다. 등록하지 않은 주소(3001)에서도 같은 모양으로 실패한다.
+- **대응:** Playwright에서 `page.route`로 그 요청을 가로채 `route.fetch()`로 상태와 본문을 찍는다. 키는 출력에서 가린다(`appkey=***`). 콘솔에서 카카오맵 사용을 켜자 200이 왔다([지도 페이지 계획](plans/2026-10-03-map-page.md) T3).
+
+### 지도를 만든 직후 `setBounds`로 맞추면 `idle`이 오지 않는다
+- **상황:** 교회 15곳에 맞춘 멀리 보는 수준(10)인데 이름표 15개가 다 보여 겹쳤다. 축소·확대로 `idle`이 오면 이름표가 맞게 숨었다.
+- **원인:** 실제 SDK는 처음 맞출 때 `idle`을 보내지 않아, 확대 수준 상태가 처음 값(8)에 머물렀다. 가짜 SDK는 `setBounds` 뒤 `idle`을 보내도록 만들어 이 차이를 숨겼다.
+- **대응:** 맞춘 뒤 `kakao.maps.event.trigger(map, "idle")`로 같은 경로를 직접 일으킨다. effect 안에서 바로 `setState`하면 `react-hooks/set-state-in-effect` lint 오류다. 가짜 SDK도 실제처럼 `setBounds`가 `idle`을 보내지 않게 바꿔, `trigger`를 빼면 e2e가 잡게 했다.
+- **교훈:** 가짜는 실제에서 본 동작에 맞춘다. 가짜를 처음 만들 때 짐작한 동작이 실제와 다르면, 가짜가 버그를 숨긴다.
+- **반대로 창 크기를 바꾸면 `idle`이 온다:** 리뷰가 "크기만 바뀌면 `idle`이 오지 않는다"(문서: 중심·수준이 바뀔 때)고 지적했지만, 창 크기를 바꾸자 고친 줄 없이도 개수가 맞게 바뀌었다(브라우저가 받은 JS에 고친 줄이 없음을 확인). 창은 그대로이고 칸만 바뀌는 경우를 위해 `ResizeObserver`에서 `relayout` 뒤 `idle`을 일으켜 둔다.
+
+### 지도 칸과 그 위의 요소
+- SDK가 지도 칸에 `position: relative`를 직접 넣는다. 칸을 `absolute inset-0`으로 채우면 높이가 0이 되므로 `size-full`로 채우고 부모에 높이를 준다.
+- SDK가 안에서 쓰는 z-index가 바깥 요소(교회 수 알약)와 섞이지 않게 지도 칸에 `isolate`를 준다.
+- 왼쪽 아래에 카카오 로고와 축척 막대가 있다. 그 자리에 요소를 두면 로고를 가린다(`bottom-9`로 올림).
+- 오버레이 내용에 DOM 요소를 주고 React `createPortal`로 그리면 핀을 버튼(접근 이름, 포커스)으로 만들 수 있다. `clickable: true`면 핀을 눌러도 지도가 끌리지 않는다.
+- 오버레이를 다시 만들면(`setMap(null)` 뒤 새로 만듦) 그 안의 버튼이 DOM에서 빠졌다 들어가 **포커스를 잃는다**. 고르기처럼 자주 바뀌는 값은 오버레이를 그대로 두고 `setZIndex` 같은 메서드로 바꾼다(리뷰 지적 #1).
+- 지도 effect를 `churches` 배열에 걸면 같은 데이터를 다시 받을 때(같은 주소로 이동)도 다시 맞춰 사용자가 옮긴 지도를 잃는다. 교회 id를 이은 값으로 정한다.
+
 ## 테스트 (Playwright)
 
 ### 설치된 브라우저와 Playwright 버전이 맞지 않는다
@@ -105,6 +127,31 @@
 - **상황:** 태그 대비를 재는 스크립트가 1.04:1을 냈다. 화면은 멀쩡했다.
 - **원인:** 색 토큰이 `oklch()`라서 Chrome의 `getComputedStyle().color`도 `oklch(...)`를 돌려준다. 스크립트가 그 숫자(L, C, H)를 RGB로 읽었다.
 - **대응:** 1×1 canvas에 `fillStyle`로 칠하고 `getImageData`로 RGB를 읽은 뒤 대비를 잰다.
+
+### 테스트 빌드의 환경변수는 `webServer.env`로 정한다
+- `NEXT_PUBLIC_*`는 빌드 때 번들에 박힌다. `@next/env`는 시작할 때 `process.env`에 이미 있는 키(빈 문자열 포함)를 `.env.local`로 덮지 않고, Playwright `webServer.env`는 `process.env`에 합쳐진다. 그래서 `webServer.env`에 가짜 키를 주면 `.env.local`과 상관없이 테스트 빌드가 정해진다.
+- 그 대신 테스트 뒤 `.next`에는 가짜 키가 남는다. `npm run start`로 데모하려면 `npm run build`를 다시 한다.
+- 키 없는 빌드도 `NEXT_PUBLIC_KAKAO_MAP_KEY= npm run build`로 만들 수 있다(빈 값이 앞섬).
+
+### 외부 SDK 요청은 막지 말고 대신 돌려준다
+- 콘솔 에러 fixture가 있어서 `route.abort()`로 막으면 `Failed to load resource`로 테스트가 실패한다. 빈 스크립트를 200으로 돌려주면 SDK가 없는 상황(대체 화면)을 콘솔 에러 없이 만든다.
+- fixture 함수의 두 번째 인자를 Playwright 문서처럼 `use`라고 부르면, 이름이 있는 fixture(`page: async (…, use) =>`)에서 `react-hooks/rules-of-hooks`가 훅 호출로 오인한다. `provide` 같은 다른 이름을 쓴다.
+- 테스트에서 `window`의 가짜 SDK 손잡이를 쓸 때 `declare global`로 `Window`를 넓히면 앱 타입에도 새어 든다(e2e도 tsconfig에 들어감). `window as unknown as { … }`로 그 자리에서만 바꾼다. 바로 바꾸면 TS2352로 빌드 타입 검사가 실패한다.
+
+### 가짜 SDK 손잡이는 지도가 준비된 뒤에 쓴다
+- `page.goto` 직후 `window.__fakeKakao.moveTo`를 부르면 SDK 스크립트가 아직 돌지 않아 `Cannot read properties of undefined`가 난다. "현재 지도 범위 내 교회" 문구 같은 준비 신호를 먼저 기다린다.
+
+### 잠깐 끼었다 사라지는 값은 DOM 변화를 기록해 잡는다
+- 지역을 바꾸는 순간 앞 지역의 범위로 거른 "0개"가 한 번 렌더된 뒤 "9개"로 바뀌었다. 최종 값만 보는 단언으로는 잡히지 않아, 개수 문구에 `MutationObserver`를 붙여 바뀐 값을 모두 기록하고 그 안에 잘못된 값이 없는지 본다(`role="status"`는 DOM 변화가 화면 읽기 프로그램에 전해질 수 있다).
+
+### 장식 이미지는 `img` 역할이 없다
+- `alt=""`인 이미지는 역할이 presentation이라 `getByRole("img")`로 찾지 못한다. 요소(`locator("img")`)로 찾는다.
+
+### 전체 페이지 스크린샷은 화면 크기를 바꾼다
+- `fullPage: true`로 찍으면 촬영하는 동안 화면이 커져, 지도가 타일을 다시 받는 중인 회색 자리가 찍혔다. 지도처럼 크기에 반응하는 화면은 화면 크기 그대로 찍는다.
+
+### 부하가 크면 "안정" 대기가 5초를 넘는다(관찰 중)
+- 테스트가 82개로 는 뒤 전체 실행에서 지도와 무관한 클릭 하나가 가끔 `waiting for element to be visible, enabled and stable`에서 `actionTimeout`(5초)을 넘겼다. 따로 돌리면 통과하고, 같은 시간대 master는 통과했다. 기록은 [지도 페이지 계획](plans/2026-10-03-map-page.md) 변경 이력에 있다. 다시 나면 원인을 더 좁힌다.
 
 ## 날짜와 시간
 
@@ -152,6 +199,11 @@
 - husky는 hook을 `sh -e`로 실행하므로 같은 방식(`.husky/_/pre-commit`)으로 시험한다.
 - 임시 index 파일(`GIT_INDEX_FILE`)을 쓰면 진짜 staging 영역을 건드리지 않고 "이 파일만 커밋하면" 상황을 흉내 낼 수 있다.
 - **`git rm`은 삭제를 바로 staging한다:** 파일을 옮기는 리팩터에서 `git rm`만 index에 올라가 있으면, 그대로 `git commit`했을 때 지운 파일을 import하는 커밋이 생긴다. pre-commit은 staging이 아니라 작업 폴더를 검사하므로 통과해 버린다. 커밋 전까지는 그냥 지우거나(`rm`) `git restore --staged`로 내려 두고, 커밋할 때 바꾼 파일과 함께 올린다([공지 페이지 계획](plans/2026-10-03-notices-page.md) 리뷰 #2).
+
+### 계획하기 전에 같은 주제의 계획서를 찾는다
+- **상황:** 지도 페이지를 계획할 때 홈 지도 칸을 맡은 카카오맵 계획(T2~T4 미완)을 놓쳤다. 상위 계획서와 코드만 보고 `docs/plans/`를 주제로 검색하지 않았다. 실행 중에 하네스 지도의 "카카오맵 T2" 문장을 보고 찾았다.
+- **대응:** 남은 task를 새 계획이 넘겨받고, 두 계획서의 변경 이력에 관계를 적었다. 그 계획의 시작 조건("카카오맵 사용 설정 켜기")이 실제로 막힌 원인이었다.
+- **다음:** 계획 전에 `grep -ril "<주제어>" docs/plans`로 미완 task(`- [ ]`)가 남은 계획을 찾는다. plan-work 조사 목록에 넣을지는 하네스 지도의 할 일로 올려 두었다.
 
 ## 스킬 만들기와 시험
 

@@ -15,27 +15,30 @@
 
 ## Architecture
 ```
-src/app/                  라우트. 홈, 행사 목록(events), 공지 목록(notices)을 구현했고 map, community, admin은 ComingSoon 자리표시 페이지
+src/app/                  라우트. 홈, 교회 지도(map), 행사 목록(events), 공지 목록(notices)을 구현했고 community, admin은 ComingSoon 자리표시 페이지
 src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
 src/components/home/      홈 섹션 (HeroBanner, StatCards, MapPreview, RecommendedChurches, RepRegisterCta,
                           UpcomingEvents, RecentNotices, CommunityFeed)과 칸 틀 SectionCard, 목록 한 줄 FeedRow
-src/components/church/    교회 카드 (ChurchCard, FavoriteButton). 지도 페이지 목록도 같이 쓴다
+src/components/church/    교회 카드 (ChurchCard, FavoriteButton)와 지도 페이지 목록의 한 줄 (ChurchListItem)
 src/components/event/     행사 카드 (EventCard, 홈과 행사 페이지가 같이 씀)
 src/components/notice/    공지 페이지의 한 줄 (NoticeItem)과 공지 분류 배지 색 (categoryTones, 홈 칸도 씀)
-src/components/map/       지도 (MapFallback: 카카오맵 키가 없을 때의 대체 화면)
+src/components/map/       카카오맵 (kakao.ts: 쓰는 SDK API의 타입과 한 번만 불러오는 로더, ChurchMap: 핀 지도,
+                          ChurchMapExplorer: 지도 페이지의 목록 + 지도, MapFallback: 키가 없거나 SDK 실패 때의 대체 화면)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (ComingSoon, TagList, HorizontalScroller,
                           목록 페이지의 칩 필터 FilterChips)
 src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
 src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
 src/lib/geo.ts, timeline.ts, datetime.ts, tags.ts, categories.ts, search-params.ts
-                          순수 로직: 지도 범위 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기, 태그 모으기·거르기,
+                          순수 로직: 지도 범위·지역 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기, 태그 모으기·거르기,
                           분류 모으기·거르기, 주소 검색어 값 꺼내기.
                           짝 테스트(<이름>.test.ts)가 같은 폴더에 있고 Vitest는 UTC에서 돈다
 src/lib/types.ts          도메인 타입과 분류 순서 상수(NOTICE_CATEGORIES)
 src/lib/data/             데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로
 src/lib/mock/             목데이터 (UI 단계 전용)
 public/images/            정적 이미지 (출처는 계획서 변경 이력에 기록)
-e2e/                      Playwright 동작 테스트. 메뉴 명세는 src를 가져오지 않고 테스트에 직접 적는다
+e2e/                      Playwright 동작 테스트. 메뉴 명세는 src를 가져오지 않고 테스트에 직접 적는다.
+                          카카오맵은 실제 서버를 쓰지 않는다: fixtures.ts가 SDK 요청에 빈 스크립트(대체 화면) 또는
+                          kakao-fake.js(가짜 SDK, kakaoSdk: "fake")를 돌려준다
 docs/plans/               계획서와 결정 기록
 ```
 앞으로 생길 폴더(`supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
@@ -48,7 +51,7 @@ docs/plans/               계획서와 결정 기록
 - `npm run dev` — 개발 서버 (http://localhost:3000)
 - `npm run lint` — ESLint
 - `npm run build` — 프로덕션 빌드 + 타입 체크
-- `npm run test` — 단위 테스트(`test:unit`) 다음에 Playwright 동작 테스트(`test:e2e`). e2e는 빌드 후 3100 포트에 서버를 띄워 실행한다 (개발 서버와 같이 켜도 됨, 약 20초)
+- `npm run test` — 단위 테스트(`test:unit`) 다음에 Playwright 동작 테스트(`test:e2e`). e2e는 빌드 후 3100 포트에 서버를 띄워 실행한다 (개발 서버와 같이 켜도 됨, 약 30초). 빌드는 가짜 카카오맵 키로 하므로, 테스트 뒤 `npm run start`로 데모하려면 `npm run build`를 다시 한다
 - `npm run test:unit` — Vitest 단위 테스트(`src/**/*.test.ts`)만. 1초 안팎
 
 ## Rules
@@ -56,7 +59,7 @@ docs/plans/               계획서와 결정 기록
 - 테스트를 먼저 쓰고 실패(red)를 본 뒤 구현한다. `src/lib`의 순수 로직(테스트·`types.ts`·`utils.ts`·`mock/`·`data/` 제외)은 짝 `<이름>.test.ts` 없이 쓰면 PreToolUse hook(`.claude/hooks/require-test-first.sh`)이 막는다. 계획서의 task마다 "테스트 먼저(red)"를 적고 red 출력을 증거로 남긴다.
 - 승인된 계획은 `docs/plans/YYYY-MM-DD-<주제>.md`로 남긴다. 기존 계획이 바뀌면 그 문서의 `## 변경 이력`에 날짜와 이유를 적는다.
 - 컴포넌트는 `src/lib/mock/`이나 Supabase 클라이언트를 직접 import하지 않고, 항상 `src/lib/data/` 함수를 거친다.
-- 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없으면 지도 자리에 대체 화면을 보여준다.
+- 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없거나 SDK를 불러오지 못하면 지도 자리에 대체 화면을 보여준다. 실제 지도는 카카오 콘솔에 등록한 `http://localhost:3000`의 `npm run dev`에서만 뜬다.
 - 비밀값은 `.env.local`에만 둔다. 이 파일은 읽거나 출력하지 않는다. 새 환경변수를 추가하면 `.env.example`에 이름과 설명만 적는다.
 - Next.js는 AGENTS.md대로 `node_modules/next/dist/docs/`의 문서를 먼저 읽는다. Tailwind v4, shadcn/ui, 카카오맵, Supabase는 처음 쓰는 API를 ctx7로 확인한다 (예: Tailwind v4는 `bg-gradient-*` 대신 `bg-linear-*`, Next 16은 이미지 `priority` 대신 `preload`/`fetchPriority`).
 - 커밋은 사용자가 요청할 때만 한다.
