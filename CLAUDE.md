@@ -15,23 +15,25 @@
 
 ## Architecture
 ```
-src/app/                  라우트. 홈, 행사 목록(events), 공지 목록(notices)을 구현했고 map, community, admin은 ComingSoon 자리표시 페이지
+src/app/                  라우트. 홈, 행사 목록(events), 공지 목록(notices), 커뮤니티 글 목록(community)을 구현했고
+                          map, admin은 ComingSoon 자리표시 페이지
 src/components/layout/    Header(서버) + Logo, MainNav, MobileNav, UserMenu(클라이언트)
 src/components/home/      홈 섹션 (HeroBanner, StatCards, MapPreview, RecommendedChurches, RepRegisterCta,
                           UpcomingEvents, RecentNotices, CommunityFeed)과 칸 틀 SectionCard, 목록 한 줄 FeedRow
 src/components/church/    교회 카드 (ChurchCard, FavoriteButton). 지도 페이지 목록도 같이 쓴다
 src/components/event/     행사 카드 (EventCard, 홈과 행사 페이지가 같이 씀)
-src/components/notice/    공지 페이지의 한 줄 (NoticeItem)과 공지 분류 배지 색 (categoryTones, 홈 칸도 씀)
+src/components/notice/    공지 분류 배지 색 (categoryTones, 홈 칸과 공지 페이지가 같이 씀)
+src/components/post/      커뮤니티 글 분류 배지 색 (categoryTones, 홈 칸과 커뮤니티 페이지가 같이 씀)
 src/components/map/       지도 (MapFallback: 카카오맵 키가 없을 때의 대체 화면)
 src/components/common/    여러 페이지가 쓰는 컴포넌트 (ComingSoon, TagList, HorizontalScroller,
-                          목록 페이지의 칩 필터 FilterChips)
+                          목록 페이지의 칩 필터 FilterChips, 공지·커뮤니티 페이지의 한 줄 ArticleRow)
 src/components/ui/        shadcn/ui 생성 컴포넌트. 직접 고치기보다 감싸서 쓴다
 src/lib/navigation.ts     메뉴 목록과 활성 경로 판정. 데스크톱·모바일 메뉴가 같이 쓴다
 src/lib/geo.ts, timeline.ts, datetime.ts, tags.ts, categories.ts, search-params.ts
                           순수 로직: 지도 범위 거르기, 다가오는 행사·최신 글 고르기, 서울 시각 표기, 태그 모으기·거르기,
                           분류 모으기·거르기, 주소 검색어 값 꺼내기.
                           짝 테스트(<이름>.test.ts)가 같은 폴더에 있고 Vitest는 UTC에서 돈다
-src/lib/types.ts          도메인 타입과 분류 순서 상수(NOTICE_CATEGORIES)
+src/lib/types.ts          도메인 타입과 분류 순서 상수(NOTICE_CATEGORIES, POST_CATEGORIES)
 src/lib/data/             데이터 접근 함수. 컴포넌트가 데이터를 얻는 유일한 통로
 src/lib/mock/             목데이터 (UI 단계 전용)
 public/images/            정적 이미지 (출처는 계획서 변경 이력에 기록)
