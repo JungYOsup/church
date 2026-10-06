@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
 import { FavoriteButton } from "@/components/church/FavoriteButton";
 import { TagList } from "@/components/common/TagList";
@@ -6,9 +7,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import type { Church } from "@/lib/types";
 
+/**
+ * 추천 교회 카드. 교회 이름이 상세 페이지로 가는 링크이고, 그 링크의 누를 수 있는 영역을 카드 전체로 넓힌다.
+ * 하트 버튼은 그 위에 올려 따로 누른다. 키보드로는 링크 하나와 하트 하나에만 멈춘다
+ */
 export function ChurchCard({ church, imageSizes }: { church: Church; imageSizes: string }) {
   return (
-    <Card size="sm" className="h-full pt-0 shadow-xs">
+    <Card
+      size="sm"
+      className="relative h-full pt-0 shadow-xs has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-ring/50"
+    >
       <div className="relative aspect-16/10">
         {/* 목데이터 사진은 그 교회의 실제 모습이 아니라 장식으로 둔다. 이름은 아래 제목이 알려 준다 */}
         <Image src={church.imageUrl} alt="" fill sizes={imageSizes} className="object-cover" />
@@ -16,11 +24,18 @@ export function ChurchCard({ church, imageSizes }: { church: Church; imageSizes:
           <MapPin aria-hidden="true" className="size-3" />
           {church.region} {church.district}
         </span>
-        <FavoriteButton churchName={church.name} className="absolute top-2 right-2" />
+        <FavoriteButton churchName={church.name} className="absolute top-2 right-2 z-10" />
       </div>
 
       <div className="flex flex-1 flex-col gap-2 px-(--card-spacing) break-keep">
-        <h3 className="text-base font-bold text-foreground">{church.name}</h3>
+        <h3 className="text-base font-bold text-foreground">
+          <Link
+            href={`/churches/${church.id}`}
+            className="outline-hidden after:absolute after:inset-0 after:content-[''] hover:underline"
+          >
+            {church.name}
+          </Link>
+        </h3>
         {/* 카드가 나란히 놓이는 폭에서는 소개가 한 줄이어도 두 줄 자리를 잡아 목사 줄 높이를 맞춘다 */}
         <p className="line-clamp-2 text-muted-foreground sm:min-h-[2lh]">{church.slogan}</p>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground/80">
