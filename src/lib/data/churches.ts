@@ -7,6 +7,11 @@ export async function getChurches({ region = null }: { region?: string | null } 
   return filterByRegion(mockChurches, region);
 }
 
+/** id로 교회 하나를 찾는다. 없으면 null */
+export async function getChurch(id: string): Promise<Church | null> {
+  return mockChurches.find((church) => church.id === id) ?? null;
+}
+
 /** 교회가 있는 지역(시·도). 교회가 많은 지역이 앞이다 */
 export async function getChurchRegions(): Promise<string[]> {
   return collectRegions(mockChurches);

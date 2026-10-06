@@ -49,7 +49,7 @@ export function HeroBanner() {
             size="lg"
             className="h-12 border-primary bg-white/80 px-7 text-base text-primary hover:bg-white hover:text-primary"
           >
-            <Link href="/admin">
+            <Link href="/admin?tab=register">
               <CirclePlus className="size-5" />
               우리 교회 등록
             </Link>

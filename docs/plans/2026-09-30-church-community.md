@@ -236,3 +236,21 @@ src/components/
   - **지난 시간:** 홈 칸처럼 "N시간 전"으로 적고 7일이 지나면 날짜로 적음. 페이지는 요청마다 그려져 요청 시각 기준으로 맞음. 목데이터의 날짜 단위 글도 경계에서 10분 비켜 둠
   - **데이터 함수:** `getRecentPosts(limit)`를 `getRecentPosts({ limit?, category? })`로 바꾸고, 칩 목록용 `getPostCategories()`를 더함. 글 분류 배지 색은 `components/post/categoryTones`로 옮김
   - **탭 제목:** "커뮤니티"로 고정하고, 바뀐 결과는 개수 문구의 `role="status"`로 알림
+- 2026-10-06: 대표자 관리 화면(`/admin`)을 만듦 ([세부 계획](2026-10-06-admin-page.md)). 1단계 라우트 중 남은 것은 교회 상세(`churches/[id]`)뿐임
+  - **범위:** 탭 두 개다.
+    - "내 교회"(`/admin`): 대표자 대시보드. 인증 상태, 내 교회 정보, 내 교회의 다가오는 행사·공지가 있음
+    - "교회 등록·인증 신청"(`/admin?tab=register`): 신청 폼
+    - 관리자 승인 화면과 역할(`member`·`admin`)에 따른 화면 분기는 로그인과 함께 2단계에서 함
+  - **입구:** 홈의 "우리 교회 등록"과 "우리 교회 등록하기"는 신청 탭으로, "대표자 인증" 카드는 대시보드로 감. 탭 상태는 다른 목록 페이지처럼 주소에 두고, 탭 제목은 "대표자 관리"로 고정함
+  - **데이터:**
+    - `UserProfile`에 `churchId`를 더함
+    - `RepVerification`(`pending | approved | rejected`, 신청·처리 시각)을 둠. 2단계 `rep_verifications` 테이블의 1단계 모양임
+    - 함수: `getMyVerification()`, `getChurch(id)`. `getUpcomingEvents`·`getRecentNotices`에 `churchId` 옵션을 더하고, 거르기는 `src/lib/ownership.ts`의 `filterByChurch`가 맡음
+  - **신청 폼:**
+    - 칸: 교회 이름, 담임목사, 지역(시·도 17개), 주소, 교인 수(선택), 한 줄 소개(선택), 대표자 이름·직분(현재 사용자로 미리 채움), 연락처, 증빙 서류(PDF·JPG·PNG, 10MB 이하), 사실 확인 동의
+    - 검사 규칙은 `src/lib/church-registration.ts`. 2단계 서버 검사도 같은 함수를 씀
+    - 1단계는 저장하지 않음. 통과하면 "신청이 접수되었습니다"와 "데모 화면이라 저장되지 않습니다" 안내를 보여 줌
+    - 주소는 2단계에서 우편번호 검색과 Geocoder로, 증빙은 Storage 업로드로 바뀜
+  - **`onSubmit`을 씀:** React 19의 `<form action>`은 처리 뒤 입력을 비워, 검사에 걸렸을 때 쓴 내용이 지워짐(배운 점 참고). 2단계에서 Server Action으로 바꿀 때 다시 정함
+  - **shadcn:** field, input, textarea, native-select, checkbox를 더함(label, separator가 함께 생김). npm 패키지는 늘지 않음
+  - **준비 중 화면(`ComingSoon`)을 지움:** 쓰는 곳이 없어짐

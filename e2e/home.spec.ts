@@ -28,10 +28,11 @@ test.describe("홈 히어로 버튼", () => {
     await expect(page).toHaveURL("/map");
   });
 
-  test("'우리 교회 등록'을 누르면 대표자 관리 페이지로 이동한다", async ({ page }) => {
+  test("'우리 교회 등록'을 누르면 대표자 관리의 신청 탭으로 이동한다", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "우리 교회 등록", exact: true }).click();
-    await expect(page).toHaveURL("/admin");
+    await expect(page).toHaveURL("/admin?tab=register");
+    await expect(page.getByRole("heading", { level: 2, name: "교회 등록·인증 신청", exact: true })).toBeVisible();
   });
 });
 
@@ -215,10 +216,11 @@ test.describe("홈 대표자 등록 안내", () => {
     await expect(region.getByRole("listitem")).toHaveText(REP_BENEFITS);
   });
 
-  test("'우리 교회 등록하기'를 누르면 대표자 관리 페이지로 이동한다", async ({ page }) => {
+  test("'우리 교회 등록하기'를 누르면 대표자 관리의 신청 탭으로 이동한다", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "우리 교회 등록하기", exact: true }).click();
-    await expect(page).toHaveURL("/admin");
+    await expect(page).toHaveURL("/admin?tab=register");
+    await expect(page.getByRole("heading", { level: 2, name: "교회 등록·인증 신청", exact: true })).toBeVisible();
   });
 });
 
