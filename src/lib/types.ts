@@ -106,3 +106,12 @@ export interface Post {
   createdAt: string;
   imageUrl: string;
 }
+
+/** 통합 검색 결과. 묶음마다 그 목록 페이지와 같은 순서다 */
+export interface SearchResults {
+  churches: Church[];
+  /** 다가오는 행사만 */
+  events: WithChurch<ChurchEvent>[];
+  notices: WithChurch<Notice>[];
+  posts: WithChurch<Post>[];
+}

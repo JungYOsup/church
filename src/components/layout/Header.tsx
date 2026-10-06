@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, getUnreadNotificationCount } from "@/lib/data/user";
@@ -21,8 +22,10 @@ export async function Header() {
           <MainNav />
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-lg" aria-label="검색">
-            <Search className="size-5" />
+          <Button asChild variant="ghost" size="icon-lg">
+            <Link href="/search" aria-label="검색">
+              <Search className="size-5" />
+            </Link>
           </Button>
           <Button
             variant="ghost"
