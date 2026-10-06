@@ -7,6 +7,9 @@ const BASE_URL = `http://localhost:${PORT}`;
 export default defineConfig({
   testDir: "./e2e",
   reporter: "list",
+  // 기본값(CPU의 절반, 이 컴퓨터는 5)으로 돌리면 부하가 커져 클릭의 "안정" 대기가 5초를 넘기며 흔들렸다
+  // (docs/lessons.md). 3으로 줄여 부하를 낮춘다
+  workers: 3,
   use: {
     baseURL: BASE_URL,
     locale: "ko-KR",
