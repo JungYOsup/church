@@ -44,6 +44,7 @@
 ### 학습 데이터와 다른 API
 - 이미지 `priority`는 deprecated다. 첫 화면 이미지는 `loading="eager"`와 `fetchPriority="high"`(또는 `preload`)를 쓴다.
 - 레이아웃 props 타입은 전역 `LayoutProps<"/">`를 쓴다.
+- 새 동적 경로의 `PageProps<"/churches/[id]">`는 빌드 전 `npx tsc --noEmit`에서 `does not satisfy the constraint 'AppRoutes'`로 실패한다. 경로 타입은 Next가 빌드(또는 개발 서버) 때 다시 만든다. `npm run build`는 그 뒤 타입 검사를 하므로 통과하고, 빌드 뒤에는 `tsc`도 통과한다.
 - 이런 차이는 추측하지 말고 `node_modules/next/dist/docs/`에서 먼저 확인한다.
 
 ### `<form action>`은 처리 뒤 입력을 비운다(React 19)
@@ -127,6 +128,16 @@
 - **원인:** `name`은 `exact: true`를 주지 않으면 대소문자를 무시한 부분 일치다(`playwright-core/types/types.d.ts`).
 - **대응:** 페이지 전체에서 링크·버튼을 찾을 때는 `exact: true`를 주거나, `getByRole("region", …)`으로 범위를 좁힌 뒤 찾는다. 새 문구를 더할 때는 기존 테스트의 이름을 포함하는지 검색한다.
 
+### 404 응답은 브라우저 콘솔 오류로 남는다
+- **상황:** 없는 교회(`/churches/church-99`)가 404인지 보는 테스트가, 상태 코드와 404 제목은 맞는데 "브라우저 콘솔 에러"로 실패했다.
+- **원인:** 브라우저는 404 응답을 `Failed to load resource: the server responded with a status of 404 (Not Found)`로 콘솔에 남긴다. 공통 fixture(`e2e/fixtures.ts`의 `consoleErrors`)는 콘솔 오류가 하나라도 있으면 실패시킨다.
+- **대응:** fixture는 그대로 두고, 404를 기대하는 테스트에서만 `consoleErrors`를 받아 그 한 줄이 정확히 1개인지 확인하고 뺀다. 다른 콘솔 오류는 여전히 잡힌다([교회 상세 계획](plans/2026-10-06-church-detail-page.md) T2).
+
+### 카드 전체로 넓힌 링크는 안쪽 요소의 클릭을 가로챈다
+- **상황:** 추천 카드의 교회 이름 링크를 `after:absolute after:inset-0`으로 카드 전체로 넓힌 뒤, "사진을 눌러도 상세로 간다" 테스트가 사진 요소를 누르려다 5초를 넘겼다. 기록에는 `<a …>한강교회</a> … intercepts pointer events`가 있었다.
+- **원인:** Playwright는 누를 요소가 그 자리의 맨 위에 있을 때까지 기다린다. 넓힌 링크가 사진을 덮고 있으니 사진은 결코 맨 위가 되지 않는다. 그리고 그것이 바로 원하던 동작이다.
+- **대응:** 안쪽 요소 대신 카드의 그 자리를 누른다(`card.click({ position: { x: 24, y: 24 } })`). 위에 따로 올린 버튼(하트, `relative z-10`)은 그대로 버튼을 눌러 이동하지 않는지 본다.
+
 ### 테스트 기대값을 앱 코드에서 가져오지 않는다
 - 메뉴 목록을 `src/lib/navigation.ts`에서 가져오면, 메뉴 이름을 실수로 바꿔도 테스트가 함께 바뀌어 잡지 못한다. 기대값은 테스트에 직접 적는다. 실제로 "행사"를 "행사안내"로 바꾸자 테스트가 바로 잡아냈다.
 
@@ -157,11 +168,12 @@
 ### 전체 페이지 스크린샷은 화면 크기를 바꾼다
 - `fullPage: true`로 찍으면 촬영하는 동안 화면이 커져, 지도가 타일을 다시 받는 중인 회색 자리가 찍혔다. 지도처럼 크기에 반응하는 화면은 화면 크기 그대로 찍는다.
 
-### 부하가 크면 "안정" 대기가 5초를 넘는다(관찰 중)
+### 부하가 크면 "안정" 대기가 5초를 넘는다(workers 3으로 줄임)
 - 테스트가 82개로 는 뒤 전체 실행에서 지도와 무관한 클릭 하나가 가끔 `waiting for element to be visible, enabled and stable`에서 `actionTimeout`(5초)을 넘겼다. 따로 돌리면 통과하고, 같은 시간대 master는 통과했다. 기록은 [지도 페이지 계획](plans/2026-10-03-map-page.md) 변경 이력에 있다.
 - **개발 서버가 켜져 있으면 거의 늘 난다(116~118개일 때):** 대표자 관리 작업에서 개발 서버(3000)를 켠 채 전체 e2e를 3번 돌리자 3번 모두 매번 다른 테스트 1~2개가 실패했다. 끈 뒤에는 3번 모두 통과했다. 테스트 중 부하 평균은 12에서 64까지 올랐다. 개발 서버 없이도 5번 중 1번 났다. 실패한 클릭은 모두 `transition-colors`가 붙은 탭·칩 링크였다. 다만 그런 링크를 누르는 테스트가 원래 많아서, 이것이 원인인지는 확인하지 않았다([대표자 관리 계획](plans/2026-10-06-admin-page.md) 변경 이력).
   - **대응:** 전체 테스트는 개발 서버를 끈 뒤 돌린다. 그래도 계속 나면 worker 수나 `actionTimeout`을 바꿀지 정한다. 테스트 설정을 바꾸는 일이라 사용자가 정한다.
   - `browser.newContext: Test ended`(30초)는 화면 코드가 돌기 전에 브라우저 창을 만들지 못한 것이다. 그때 `mds`(Spotlight 색인)가 CPU 40%를 쓰고 있었다. 빌드가 파일을 많이 만든 직후라 색인이 붙은 것으로 보인다.
+- **동시 실행 수를 5에서 3으로 줄였다(`playwright.config.ts`의 `workers: 3`):** 기본값은 CPU의 절반(이 컴퓨터는 5)이다. 줄인 뒤 교회 상세 작업 동안 개발 서버를 끄고 돌린 전체 e2e 8번(118~132개)이 모두 통과했다. 시간은 40~49초로 5 workers 때와 비슷했고, 테스트 중 부하 평균은 17 안팎이었다(5 workers 때 26~64). 그래도 다시 나면 `actionTimeout`을 볼 차례다([교회 상세 계획](plans/2026-10-06-church-detail-page.md) T1).
 
 ## 날짜와 시간
 
