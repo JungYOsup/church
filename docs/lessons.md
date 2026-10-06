@@ -221,6 +221,20 @@
 ### 아티팩트는 게시 전에 최신본을 받는다
 - 같은 지도를 여러 세션이 고친다. 로컬 사본은 오래됐을 수 있으므로, 게시 전에 항상 최신본을 read해서 그 위에 고친다.
 
+### 워크트리로 나눠 일할 때
+같은 폴더에서 두 세션이 일하면 한쪽이 branch를 바꿀 때 다른 쪽 작업 폴더도 함께 바뀐다. 그래서 커뮤니티 페이지는 워크트리에서 만들었다([커뮤니티 계획](plans/2026-10-03-community-page.md)). 그때 만난 함정은 다음과 같다.
+- **기본 워크트리는 push된 곳에서 갈라진다:** `EnterWorktree`(이름으로 만들기)는 기본으로 `origin/<기본 branch>`에서 갈라진다. push하지 않은 커밋(그때 11개)이 빠진다. `git worktree add -b <branch> ../church-<이름> master`처럼 로컬 master에서 직접 만들고, `EnterWorktree`에는 `path`로 들어간다.
+- **워크트리를 저장소 안에 두지 않는다:** `.claude/worktrees/`는 `.gitignore`에 없다. 저장소 안에 두면 원래 폴더의 lint, `tsconfig`의 `**/*.ts`, Tailwind 소스 탐색이 워크트리 파일까지 훑는다. 저장소 옆 폴더(`../church-community`)에 둔다.
+- **hook은 워크트리가 아니라 원래 폴더를 본다:** Stop hook과 PreToolUse hook은 `$CLAUDE_PROJECT_DIR`(원래 폴더)에서 돈다.
+  - 실제로 워크트리에서 일하는 동안 Stop hook이 원래 폴더의 단위 테스트와 lint를 돌렸다. 다른 세션이 작업 중인 `e2e/fixtures.ts`의 lint 오류로 응답을 막았다.
+  - 그래서 워크트리에서는 task 경계마다 `npm run test:unit && npm run lint && npm run build`를 직접 돌린다. 원래 폴더의 실패는 그 세션의 일이라 고치지 않는다.
+  - pre-commit은 `core.hooksPath=.husky/_`(상대 경로)라 워크트리의 `.husky/pre-commit`이 돈다.
+- **e2e 포트 3100은 모든 폴더가 같이 쓴다:** `reuseExistingServer: false`라서, 다른 폴더의 `npm run test`가 도는 동안에는 `http://localhost:3100 is already used`로 실패한다.
+  - 돌리기 전에 `lsof -iTCP:3100 -sTCP:LISTEN`으로 확인한다. 차 있으면 `lsof -a -p <PID> -d cwd`로 어느 폴더의 서버인지 보고, 빌 때까지 기다린다.
+  - `until ! lsof …; do sleep 5; done`을 백그라운드로 돌리면 빈 순간에 알림을 받는다.
+- **워크트리에 묶인 세션에서는 `source ~/.nvm/nvm.sh`가 막힌다:** 셸이 무엇을 실행할지 확인할 수 없다는 이유다. Node 22는 `env PATH=/Users/anderson/.nvm/versions/node/v22.14.0/bin:/usr/bin:/bin npm …`처럼 경로를 글자 그대로 적어 쓴다(`$PATH`처럼 실행 때 정해지는 값도 막힌다).
+- 워크트리에는 `.env.local`이 없어 지도는 대체 화면이다. 키가 필요한 확인은 원래 폴더에서 한다.
+
 ## 콘텐츠
 
 - **목업 문구를 그대로 믿지 않는다:** 참고 이미지(ChatGPT 목업)의 히브리서 10:24 인용("다른 지체를 돌아보아")은 실제 본문과 달랐다. 성경 구절 같은 사실 정보는 원문(개역개정 "서로 돌아보아 사랑과 선행을 격려하며")으로 확인한다.

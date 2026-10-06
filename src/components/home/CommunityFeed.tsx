@@ -1,22 +1,14 @@
 import { Users } from "lucide-react";
 import { FeedRow } from "@/components/home/FeedRow";
 import { SectionCard } from "@/components/home/SectionCard";
+import { POST_CATEGORY_TONES } from "@/components/post/categoryTones";
 import { getRecentPosts } from "@/lib/data/posts";
 import { formatRelativeTime } from "@/lib/datetime";
-import type { PostCategory } from "@/lib/types";
 
 const POST_COUNT = 4;
 
-// globals.css의 태그 토큰. Tailwind가 클래스를 찾을 수 있게 완성된 문자열로 적는다.
-const CATEGORY_TONES: Record<PostCategory, string> = {
-  기도제목: "bg-tag-rose-soft text-tag-rose",
-  사역나눔: "bg-tag-blue-soft text-tag-blue",
-  선교소식: "bg-tag-green-soft text-tag-green",
-  봉사후기: "bg-tag-orange-soft text-tag-orange",
-};
-
 export async function CommunityFeed() {
-  const posts = await getRecentPosts(POST_COUNT);
+  const posts = await getRecentPosts({ limit: POST_COUNT });
   // "N시간 전"은 서버가 그릴 때 한 번 계산한다. 클라이언트에서 다시 계산하면 시각이 달라 hydration이 어긋난다.
   // 홈은 정적 페이지라 그리는 시각은 빌드 시각이다(요청마다가 아님). 다시 그리는 주기는 Supabase 단계에서 정한다
   const now = new Date();
@@ -39,7 +31,7 @@ export async function CommunityFeed() {
               imageUrl={post.imageUrl}
               title={post.title}
               category={post.category}
-              categoryClassName={CATEGORY_TONES[post.category]}
+              categoryClassName={POST_CATEGORY_TONES[post.category]}
               meta={
                 <>
                   {post.church.name}
