@@ -1,0 +1,315 @@
+# 대표자 관리 화면 (`/admin`)
+
+## Context
+- **왜 하는가:** `/admin`은 1단계 화면 중 아직 "준비 중"인 곳입니다. 홈의 세 입구("우리 교회 등록", "우리 교회 등록하기", "대표자 인증" 카드)가 모두 이 빈 화면으로 옵니다. 상위 계획서 2단계의 "대표자 관리(인증 신청, 관리자 승인, 내 교회의 행사·공지 관리)"에 앞서, 1단계에서는 화면을 목데이터로 만듭니다.
+- **spec**
+  - 무엇을: 탭 두 개로 된 대표자 관리 화면
+    - "내 교회": 대표자 대시보드. 인증 상태, 내 교회 정보, 내 교회의 다가오는 행사·공지, 쓰기 버튼 자리
+    - "교회 등록·인증 신청": 신청 폼. 입력을 검사해 오류를 보여 주고, 통과하면 데모 접수 화면을 보여 줌(저장하지 않음)
+  - 어디서: `/admin`(내 교회), `/admin?tab=register`(신청)
+  - 완료 조건: 두 탭이 동작함. 빈 칸·형식 오류는 칸마다 메시지와 함께 막고, 올바르게 내면 접수 화면이 나옴. 홈 입구가 맞는 탭으로 옴. 단위 테스트와 e2e를 추가해 `npm run test` 통과. 375 / 768 / 1440px 확인
+- **6축 위치:** 실행(task 단위 실행), 검증(입력 검사는 Vitest TDD, 화면은 e2e 먼저, 일부러 깨뜨려 보기)
+
+## 확인한 사실
+- **상위 계획서(1단계 라우트·컴포넌트·데이터 계층 절, 2단계 절):** `admin/page.tsx`는 "대표자 관리 (1단계는 화면만)". 2단계 스키마는 `profiles.role`(`member | church_rep | admin`)과 `rep_verifications`(인증 신청, 증빙 파일, 승인 상태)를 둡니다. 교회 등록 폼은 2단계에서 다음 우편번호 검색과 카카오 Geocoder로 좌표를 넣고, 사진은 Storage에 올립니다. 승인은 `admin`만 합니다. 참고 이미지는 홈 목업뿐이라 이 화면의 목업은 없습니다.
+- **현재 사용자:** `src/lib/mock/user.ts`의 김은혜 집사는 서연교회 대표자(`church_rep`)입니다. `UserProfile`에는 `churchName`만 있고 `churchId`가 없습니다. `UserRole`은 `types.ts`에 이미 있습니다.
+- **서연교회(`church-1`) 콘텐츠:** 행사는 `event-3` "청년 연합 찬양집회"(2일 뒤) 1개, 공지는 `notice-5` "특별새벽기도회에 여러분을 초대합니다"(1일 전) 1개입니다. 목데이터를 늘리면 행사·공지 페이지와 홈 e2e의 개수가 바뀌므로 늘리지 않습니다.
+- **입구:**
+  - `HeroBanner.tsx:52` "우리 교회 등록"과 `RepRegisterCta.tsx:43` "우리 교회 등록하기"는 `/admin`으로 갑니다. `e2e/home.spec.ts:31`, `:218`이 `toHaveURL("/admin")`로 이것을 검사합니다.
+  - `StatCards` "대표자 인증" 카드도 `/admin`으로 가고, `e2e/home.spec.ts`의 카드 명세가 이것을 검사합니다.
+  - 메뉴 활성 표시는 `isActivePath`가 경로만 보므로 `?tab=`과 상관없이 "대표자 관리"가 활성입니다.
+- **기존 패턴:**
+  - 목록 페이지는 상태를 주소에 두고 `parseSearchParam`으로 읽습니다(`src/app/notices/page.tsx`).
+  - 탭 제목은 경로마다 고정합니다. 검색어에 따라 제목을 바꾸면 Link 미리 불러오기에서 어긋납니다(`docs/lessons.md` 49행).
+  - 거르기는 `src/lib`의 순수 함수(`filterByCategory`, `filterByRegion`)로 하고, 데이터 함수는 `{ limit?, category? }` 꼴 옵션을 받습니다.
+  - 공지 줄은 `common/ArticleRow`, 태그는 `common/TagList`, 날짜는 `src/lib/datetime.ts`를 씁니다.
+- **ComingSoon:** `/admin`이 마지막 사용처입니다(`grep -rn ComingSoon src e2e`). 이 화면을 만들면 쓰는 곳이 없어집니다.
+- **shadcn(ctx7 `/shadcn-ui/ui`):**
+  - 폼은 `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldSet`, `FieldLegend`, `FieldGroup`으로 짭니다. 오류 칸은 `Field`에 `data-invalid`, 입력에 `aria-invalid`를 줍니다.
+  - 설치는 `npx shadcn@latest add field input textarea native-select checkbox`입니다.
+  - 지금 `src/components/ui/`에는 avatar, badge, button, card, dropdown-menu, sheet만 있습니다. 스타일은 `radix-nova`이고, `radix-ui` 패키지는 이미 설치돼 있습니다.
+- **Next 16 문서(`02-guides/forms.md`):** 오류를 보여 주려면 `<form>`을 가진 컴포넌트를 Client Component로 만듭니다. 서버 검사는 Server Action과 `useActionState`로 합니다.
+- **React 19.2.8 소스(`react-dom-client.development.js`의 `startHostTransition`):** `<form action={fn}>`으로 제출하면 처리 뒤 `requestFormReset`으로 비제어 입력을 비웁니다. 검사에 실패했을 때 사용자의 입력이 지워지므로, 1단계는 `onSubmit`과 `preventDefault`로 처리합니다.
+- **배운 점:**
+  - 역할 이름은 기본이 부분 일치입니다. "내 교회"와 "교회 등록·인증 신청"이 모두 "교회"를 포함하므로 테스트는 `exact: true`로 찾습니다.
+  - e2e 기대값은 앱 코드에서 가져오지 않습니다.
+  - 목데이터 날짜는 지금 기준 상대값으로 둡니다.
+
+## 결정
+- **질문과 답:**
+  - 화면 범위: 대시보드와 등록·인증 신청 둘 다. 관리자 승인 화면은 2단계로 미룹니다.
+  - 폼 동작: 입력 검사 뒤 데모 접수 화면을 보여 주고, 저장하지 않습니다.
+- **정한 것:**
+  - **탭은 주소에 둡니다(`?tab=register`).**
+    - 홈 입구가 신청 탭으로 바로 올 수 있고, 다른 목록 페이지처럼 상태가 주소에 남습니다.
+    - 탭은 `Link` 두 개로 된 `nav`이고, 고른 쪽에 `aria-current="page"`를 붙입니다.
+    - 모르는 값(`?tab=foo`)이면 "내 교회"를 보여 줍니다.
+    - 탭 제목은 "대표자 관리"로 고정합니다.
+  - **입구:**
+    - "우리 교회 등록"과 "우리 교회 등록하기"는 `/admin?tab=register`로 갑니다(home e2e 2개의 기대값을 바꿈).
+    - "대표자 인증" 카드는 인증 상태가 있는 `/admin`에 그대로 둡니다.
+  - **데이터:**
+    - `UserProfile`에 `churchId`를 더합니다. `churchName`은 헤더가 쓰므로 그대로 둡니다.
+    - 새 타입 `RepVerification`: `churchId`, `status`(`pending | approved | rejected`), `requestedAt`, `reviewedAt`.
+    - 목데이터는 40일 전 신청, 37일 전 승인입니다. 날짜는 지금 기준 상대값입니다.
+    - 함수는 `getMyVerification()`과 `getChurch(id)`(없으면 `null`)입니다.
+    - `getUpcomingEvents`와 `getRecentNotices`에 `churchId` 옵션을 더합니다. 거르기는 순수 함수 `filterByChurch`(`src/lib/ownership.ts`)가 맡습니다.
+  - **"내 교회" 구성:**
+    - 인증 상태 칸: "인증 완료" 배지와 승인일
+    - 교회 정보 칸: 사진, 이름, 소개, 지역·구, 주소, 담임목사, 교인 수, 태그
+    - 다가오는 행사 칸: 제목과 일시
+    - 공지 칸: `ArticleRow`
+    - "새 행사 등록", "새 공지 쓰기", "교회 정보 고치기"는 비활성 버튼입니다. 그 옆에 "로그인 기능과 함께 2단계에서 열립니다"를 글로 적습니다.
+  - **신청 폼의 칸:**
+    - 교회 정보: 교회 이름(필수, 30자 이하), 담임목사(필수), 지역(필수, 시·도 17개 중 선택), 주소(필수, 2단계에서 우편번호 검색으로 바뀜을 설명에 적음), 교인 수(선택, 1 이상 정수), 한 줄 소개(선택, 60자 이하)
+    - 대표자 정보: 이름(필수), 직분(필수). 둘 다 현재 사용자 값으로 미리 채웁니다.
+    - 그 밖에: 연락처(필수, `010-1234-5678`이나 `01012345678` 꼴), 증빙 서류(필수, PDF·JPG·PNG, 10MB 이하), 사실 확인 동의(필수)
+    - 지역 목록과 검사 규칙은 `src/lib/church-registration.ts`에 둡니다. 2단계 서버 검사도 같은 함수를 씁니다.
+  - **오류 표시:**
+    - 제출하면 칸마다 `aria-invalid`와 메시지를 보여 줍니다.
+    - 폼 위에 "입력을 확인해 주세요 (N개)" 요약을 한 번 알리고, 첫 오류 칸으로 포커스를 옮깁니다.
+    - 고친 뒤 다시 내면 맞는 칸의 오류는 사라집니다.
+  - **접수 화면:**
+    - 폼 자리에 "신청이 접수되었습니다" 제목을 보여 주고 포커스를 옮깁니다. "데모 화면이라 저장되지 않습니다" 안내와 입력 요약(교회 이름, 지역, 대표자, 증빙 파일 이름)을 함께 둡니다.
+    - "새로 작성"을 누르면 빈 폼으로 돌아갑니다.
+  - **ComingSoon 컴포넌트는 지웁니다.** 쓰는 곳이 없어지기 때문입니다.
+  - **branch:** `feat/admin-page`에서 task마다 커밋하고, master에 `--no-ff`로 합칩니다(지금까지의 방식).
+
+## Tasks
+task 형식은 `run-plan`이 읽으므로 그대로 쓴다. 의존이 없으면 `없음`.
+
+- [x] **T1. 등록 신청 입력 검사 (순수 로직)**
+  - 파일: `src/lib/church-registration.test.ts`, `src/lib/church-registration.ts`
+  - 의존: 없음
+  - 테스트 먼저(red): `church-registration.test.ts`에 경우를 먼저 쓰고 `npm run test:unit`을 돌립니다. 빈 객체를 돌려주는 빈 `validateChurchRegistration`에서 오류를 기대하는 테스트가 실패해야 합니다. 경우는 다음과 같습니다.
+    - 모두 비거나 공백뿐이면 필수 칸 9개(교회 이름, 담임목사, 지역, 주소, 대표자 이름, 직분, 연락처, 증빙, 동의)에 오류가 납니다.
+    - 올바른 입력이면 오류가 없습니다. 선택 칸(교인 수, 소개)은 비어도 됩니다.
+    - 교회 이름은 30자까지 통과하고 31자부터 막습니다. 소개는 60자까지 통과하고 61자부터 막습니다.
+    - 목록에 없는 지역은 막습니다.
+    - 교인 수는 `0`, `-3`, `2.5`, `abc`를 막고 `530`은 통과합니다.
+    - 연락처는 `010-1234-5678`, `01012345678`, `011-123-4567`을 통과하고 `02-123-4567`, `010-12-5678`을 막습니다.
+    - 증빙은 확장자(`.pdf`, `.JPG`, `.jpeg`, `.png` 통과, `.exe` 막음)와 크기(정확히 10MB는 통과, 1바이트 넘으면 막음)를 봅니다.
+    - 동의가 `false`이면 막습니다.
+    - 입력 객체를 바꾸지 않습니다.
+  - 확인(동작 증거): `npm run test:unit` 통과. 깨뜨려 보기(확인 후 되돌림): 크기 비교의 `<=`를 `<`로 바꾸면 "정확히 10MB" 테스트 1개만 실패해야 합니다.
+  - 증거:
+    - Red(빈 구현이 `{}`를 돌려줌): `npx vitest run src/lib/church-registration.test.ts` → `Tests 9 failed | 2 passed (11)`. "올바른 입력"과 "입력 불변"만 통과했습니다.
+    - Green: `npm run test:unit` → `Test Files 7 passed (7)`, `Tests 75 passed (75)`(기존 64 + 11)
+    - 깨뜨려 보기: 구현은 "넘으면 막음"(`size > PROOF_MAX_BYTES`)이라 같은 뜻의 깨뜨리기로 `>=`로 바꿨습니다. "증빙 서류는 정확히 10MB까지 받는다" 1개만 실패(`1 failed | 10 passed`). 되돌린 뒤 `cmp`로 원본 확인, `11 passed`
+    - `npm run lint` 오류 0건, `npm run build` → `✓ Compiled successfully`, `Finished TypeScript`
+- [x] **T2. 교회별 거르기와 행사·공지 데이터의 churchId 옵션**
+  - 파일: `src/lib/ownership.test.ts`, `src/lib/ownership.ts`, `src/lib/data/events.ts`, `src/lib/data/notices.ts`
+  - 의존: 없음
+  - 테스트 먼저(red): `ownership.test.ts`에 경우를 먼저 씁니다.
+    - `null`이면 전부를 새 배열로 돌려줍니다.
+    - 같은 교회만 원래 순서대로 남깁니다.
+    - 없는 교회는 빈 목록입니다.
+    - 원래 객체를 그대로 두고 입력을 바꾸지 않습니다.
+    - 입력을 그대로 돌려주는 빈 구현에서 판단이 들어간 테스트가 실패하는 것을 `npm run test:unit`으로 봅니다.
+  - 확인(동작 증거):
+    - jiti 임시 스크립트(scratchpad)로 확인합니다.
+      - `getUpcomingEvents({ churchId: "church-1" })` → `["청년 연합 찬양집회"]`
+      - `getRecentNotices({ churchId: "church-1" })` → `["특별새벽기도회에 여러분을 초대합니다"]`
+      - 인자 없는 호출의 개수가 바뀌기 전과 같습니다(공지 8개, 다가오는 행사는 바꾸기 전 실행 값과 같음).
+    - `npm run test` 통과(기존 행사·공지·홈 e2e 그대로)
+  - 증거:
+    - Red(입력을 그대로 돌려주는 빈 구현): `npx vitest run src/lib/ownership.test.ts` → `Tests 4 failed (4)`. 새 배열이 아니고, 거르지 않고, 첫 항목이 다른 객체라 네 경우 모두 실패했습니다.
+    - 바꾸기 전 jiti(`scratchpad/admin-data-check.ts`): 인자 없이 `events: 8`, `notices: 8`
+    - Green: `npm run test:unit` → `Test Files 8 passed (8)`, `Tests 79 passed (79)`
+    - 바꾼 뒤 jiti:
+      - 인자 없이 `events: 8`, `notices: 8`이고 제목 순서가 바꾸기 전과 같습니다.
+      - `{"churchId":"church-1"}` → `events: 1 [ '청년 연합 찬양집회' ]`, `notices: 1 [ '특별새벽기도회에 여러분을 초대합니다' ]`
+    - `npm run lint` 오류 0건. `npm run test` → 단위 `79 passed`, e2e `102 passed (43.4s)`(기존 행사·공지·홈 그대로)
+- [x] **T3. 대표자·인증 데이터 계층**
+  - 파일: `src/lib/types.ts`, `src/lib/mock/user.ts`, `src/lib/data/user.ts`, `src/lib/data/churches.ts`
+  - 의존: 없음
+  - 테스트 먼저(red): 해당 없음. 목데이터를 돌려주기만 합니다. 날짜는 이미 테스트된 `atSeoulTime`으로 만듭니다.
+  - 확인(동작 증거):
+    - jiti로 확인합니다.
+      - `getCurrentUser().churchId` → `"church-1"`
+      - `getChurch("church-1")?.name` → `"서연교회"`
+      - `getChurch("church-99")` → `null`
+      - `getMyVerification()`은 `status: "approved"`이고, `reviewedAt`이 `requestedAt`보다 3일 뒤입니다.
+    - `npm run build` 통과. 헤더 사용자 메뉴의 e2e가 그대로 통과합니다.
+  - 증거:
+    - jiti(`scratchpad/admin-user-check.ts`, 2026-10-06 실행):
+      - `user.churchId: church-1`
+      - `church-1: 서연교회`, `church-99: null`
+      - `verification: approved 2026-08-27T01:00:00.000Z 2026-08-30T01:00:00.000Z days: 3`(서울 오전 10시, 40일 전 신청과 37일 전 승인)
+    - `npm run lint` 오류 0건, `npm run build` → `✓ Compiled successfully`, `Finished TypeScript`
+    - `npm run test:e2e -- e2e/navigation.spec.ts` → `11 passed (10.9s)`(헤더 사용자 메뉴 포함)
+- [x] **T4. 페이지 뼈대, 탭, "내 교회" 화면**
+  - 파일: `e2e/admin.spec.ts`, `src/app/admin/page.tsx`, `src/components/admin/AdminTabs.tsx`, `src/components/admin/MyChurchPanel.tsx`, `src/components/common/ComingSoon.tsx`(삭제)
+  - 의존: T2, T3
+  - 테스트 먼저(red): `e2e/admin.spec.ts`의 "대표자 관리 내 교회"와 "대표자 관리 탭" 묶음을 먼저 쓰고 `npm run test:e2e -- e2e/admin.spec.ts`를 돌립니다. 준비 중 화면이라 새 테스트가 실패해야 합니다(h1은 같아서 제목 테스트만 통과할 수 있음).
+    - "내 교회" 묶음:
+      - `h1` "대표자 관리", 탭 제목 "대표자 관리 | 함께하는 교회"
+      - "내 교회" 탭에 `aria-current="page"`가 있습니다.
+      - 인증 칸에 "인증 완료"와 날짜 꼴이 보입니다.
+      - 교회 칸에 서연교회, 김성민, 서울 용산구, 530명, 태그 3개가 보입니다.
+      - 행사 칸에 "청년 연합 찬양집회" 1개, 공지 칸에 "특별새벽기도회에 여러분을 초대합니다" 1개가 있습니다.
+      - "새 행사 등록", "새 공지 쓰기", "교회 정보 고치기"가 비활성입니다.
+    - "탭" 묶음:
+      - "교회 등록·인증 신청"을 누르면 주소가 `/admin?tab=register`가 되고, 그 탭이 현재 탭이 되며, `h2` "교회 등록·인증 신청"이 보입니다.
+      - "내 교회"를 누르면 돌아옵니다.
+      - `?tab=foo`이면 "내 교회"를 보여 줍니다.
+      - 375 / 768 / 1440px에서 가로 스크롤이 없습니다.
+  - 확인(동작 증거):
+    - `npm run test` 통과
+    - `grep -rn ComingSoon src e2e`가 아무것도 찾지 않습니다.
+    - 개발 서버(3000)에서 375 / 768 / 1440px 스크린샷을 봅니다. 칸 배치, 비활성 버튼과 안내, 가로 넘침, 콘솔 오류를 확인합니다.
+  - 증거:
+    - Red: `npm run test:e2e -- e2e/admin.spec.ts` → `7 failed`, `3 passed`. 가로 스크롤 검사 3개는 준비 중 화면에서도 통과했고, 제목 테스트는 탭(`aria-current`)이 없어 실패했습니다.
+    - Green: 같은 명령 → `10 passed (13.5s)`. `npm run test` → 단위 `79 passed`, e2e `112 passed (35.3s)`(102 + 대표자 관리 10)
+    - `npm run lint` 오류 0건, 빌드(`npm run test` 안) 성공. `grep -rn ComingSoon src e2e` → 결과 없음(exit 1). 삭제는 staging하지 않았습니다.
+    - 개발 서버 3000(`scratchpad/t4-admin-375.png`, `-768.png`, `-1440.png`): 세 폭 모두 `overflow: false`, 콘솔 오류 `[]`
+      - 1440px: 위 줄은 인증 상태 | 교회 정보(2칸), 아래 줄은 다가오는 행사 | 공지입니다.
+      - 768·375px: 한 열입니다. 768px은 교회 사진이 정보 왼쪽에, 375px은 위에 놓입니다.
+      - 비활성 버튼 3개는 흐리게 보이고, 그 이유는 대시보드 맨 위 안내 한 줄이 알려 줍니다.
+    - 신청 탭은 이 task에서 제목(`h2`)과 안내 한 줄만 둡니다. 폼은 T5에서 넣습니다.
+- [x] **T5. 신청 폼과 입력 검사 화면**
+  - 파일: `src/components/ui/field.tsx` 외 shadcn 생성 파일(`input`, `textarea`, `native-select`, `checkbox`, 그리고 `field`가 함께 가져오는 것), `src/components/admin/ChurchRegisterForm.tsx`, `src/app/admin/page.tsx`, `e2e/admin.spec.ts`
+  - 의존: T1, T4
+  - 테스트 먼저(red): "교회 등록 신청 입력 검사" 묶음을 먼저 쓰고 `npm run test:e2e -- -g "교회 등록 신청 입력 검사"`를 돌립니다. 폼이 없어서 실패해야 합니다.
+    - 대표자 이름과 직분이 "김은혜", "집사"로 미리 채워져 있습니다.
+    - 빈 채로 "신청하기"를 누르면 다음과 같습니다.
+      - 요약 "입력을 확인해 주세요 (7개)"가 나옵니다(미리 채운 2칸 제외).
+      - 필수 칸마다 `aria-invalid="true"`와 메시지가 붙습니다.
+      - 포커스가 "교회 이름"에 있습니다.
+    - 연락처 `02-123-4567`과 `.exe` 파일은 형식 메시지를 보여 줍니다. 파일은 `setInputFiles`에 buffer로 넣습니다.
+    - 오류 칸을 고쳐 다시 내면 그 칸의 오류가 사라집니다.
+  - 확인(동작 증거):
+    - `npm run test` 통과
+    - `npx shadcn add` 뒤 `git diff --stat`에서 `package.json`이나 `globals.css`가 바뀌었는지 확인하고, 바뀌었으면 변경 이력에 적습니다. 생성된 `FieldError`의 역할(`role="alert"` 여부)도 확인합니다. 칸마다 alert이면 오류 9개가 한꺼번에 읽히므로, 알림은 요약 한 곳에서만 하도록 감쌉니다.
+    - 개발 서버 375 / 768 / 1440px에서 빈 제출 상태를 봅니다. 오류 색과 메시지 위치, 포커스 ring, 375px에서 칸이 한 열인지, 가로 넘침을 확인합니다.
+  - 증거:
+    - Red: `npm run test:e2e -- -g "교회 등록 신청 입력 검사"` → `4 failed`(폼이 없어 미리 채운 값부터 찾지 못함)
+    - `npx shadcn@latest add field input textarea native-select checkbox --yes`(shadcn 4.21.2)
+      - 7개 파일을 만들었습니다: input, textarea, native-select, checkbox, label, separator, field. label과 separator는 field가 함께 가져왔습니다.
+      - `package.json`과 `globals.css`는 바뀌지 않았습니다(`git diff --stat`에 없음).
+    - 생성된 `FieldError`는 `role="alert"`입니다. 칸 메시지에는 `role={undefined}`를 넘겨 역할을 빼고, `aria-describedby`로 칸 설명이 되게 했습니다. 알림은 폼 위 요약 한 곳(`role="alert"`)에서만 합니다. e2e의 `getByRole("alert")`가 strict 모드에서 하나만 찾는 것으로 확인됩니다.
+    - Green: `npm run test:e2e -- e2e/admin.spec.ts` → `14 passed (16.1s)`. `npm run lint` 오류 0건, `npx tsc --noEmit` 통과
+    - 개발 서버 3000에서 빈 제출(`scratchpad/t5-register-errors-375.png`, `-768`, `-1440`):
+      - 세 폭 모두 포커스 `churchName`, `overflow: false`, 콘솔 오류 `[]`
+      - 375px에서 칸은 한 열, 768px부터 두 열(주소·소개는 전체 폭)입니다.
+      - 첫 스크린샷에서 375px의 동의 체크박스와 문구가 다른 줄로 떨어져, shadcn 문서의 꼴(`Field` 가로 + `FieldContent`)로 고쳤습니다. 고친 뒤 체크박스와 문구의 위쪽 위치가 1px 차이로 한 줄입니다(`t5-register-bottom-375.png`).
+    - `npm run test`(개발 서버를 끈 상태) → 단위 `79 passed`, e2e `116 passed (46.0s)`
+    - 전체 e2e 흔들림(변경 이력 참고): 개발 서버를 켠 채 돌린 전체 e2e 3번은 모두 실패했습니다. 실패한 테스트는 매번 다른 1~2개였고(대표자 관리 탭, 커뮤니티 둘), `visible, enabled and stable` 대기나 30초 시간 초과였습니다. 끈 채로는 3번 모두 `116 passed`였습니다.
+- [x] **T6. 데모 접수 화면과 홈 입구 연결**
+  - 파일: `src/components/admin/ChurchRegisterForm.tsx`, `src/components/home/HeroBanner.tsx`, `src/components/home/RepRegisterCta.tsx`, `e2e/admin.spec.ts`, `e2e/home.spec.ts`
+  - 의존: T5
+  - 테스트 먼저(red): 두 묶음을 먼저 쓰고 고친 뒤 `npm run test:e2e -- -g "교회 등록 신청 접수|홈 히어로 버튼|홈 대표자 등록 안내"`를 돌립니다. 접수 화면이 없고 입구가 `/admin`이라 실패해야 합니다.
+    - "교회 등록 신청 접수" 묶음(admin):
+      - 올바르게 채워 내면 "신청이 접수되었습니다" 제목에 포커스가 가고, "저장되지 않습니다" 안내와 교회 이름·지역·대표자·파일 이름 요약이 보입니다.
+      - "새로 작성"을 누르면 빈 폼(미리 채운 2칸만 남음)으로 돌아갑니다.
+    - home.spec의 두 입구 테스트는 `toHaveURL("/admin?tab=register")`로 바꾸고, 도착한 화면에 `h2` "교회 등록·인증 신청"이 보이는지도 봅니다.
+  - 확인(동작 증거):
+    - `npm run test` 통과
+    - 개발 서버에서 홈의 두 버튼을 눌러 신청 탭에 도착하는지, 접수 화면이 375 / 1440px에서 어떻게 보이는지 확인합니다.
+  - 증거:
+    - Red: `npm run test:e2e -- -g "교회 등록 신청 접수|홈 히어로 버튼|홈 대표자 등록 안내"` → `4 failed`, `2 passed`
+      - 실패: 접수 화면 2개(제목에 포커스가 없음), 바뀐 입구 2개(주소가 `/admin`)
+      - 통과: 고치지 않은 "교회 찾기"와 "할 수 있는 일 3가지"
+    - Green: 같은 범위에 대표자 관리 묶음을 더해 `21 passed (16.7s)`. 첫 실행은 다른 테스트 2개가 `browser.newContext: Test ended`(30초)로 실패했습니다. 화면 코드가 돌기 전 단계이고, 그때 `mds`(Spotlight 색인)가 CPU 40%를 쓰고 있었습니다. 다시 돌린 결과가 위의 21 passed입니다.
+    - `npm run lint` 오류 0건, `npx tsc --noEmit` 통과
+    - `npm run test`(개발 서버 없음) → 단위 `79 passed`, e2e `117 passed`, `1 failed`
+      - 실패는 지도 "지역을 바꾸는 동안…"의 칩 클릭이었습니다(`visible, enabled and stable` 5초 초과). 지도 코드는 이번에 바꾸지 않았습니다.
+      - 이어서 `npm run test:e2e`를 두 번 더 돌려 두 번 모두 `118 passed (38.8s, 40.0s)`였습니다. 변경 이력의 흔들림 항목에 더했습니다.
+    - 개발 서버 3000(`scratchpad/t6-receipt-375.png`, `-1440.png`, 확인 뒤 서버를 끔):
+      - 375px은 "우리 교회 등록하기", 1440px은 "우리 교회 등록"을 눌러 `/admin?tab=register`에 도착했습니다.
+      - 채워서 내면 포커스가 "신청이 접수되었습니다"로 갑니다. `overflow: false`, 콘솔 오류 `[]`
+- [x] **T7. 문서**
+  - 파일: `CLAUDE.md`, `docs/plans/2026-09-30-church-community.md`, 이 계획서, (새 함정이 있으면) `docs/lessons.md`
+  - 의존: T6
+  - 테스트 먼저(red): 해당 없음. 문서만 바꿉니다.
+  - 확인(동작 증거):
+    - CLAUDE.md Architecture를 다음처럼 고쳤습니다.
+      - `admin` 구현, `components/admin/`
+      - `common/`에서 ComingSoon 빼기
+      - `church-registration.ts`, `ownership.ts`를 순수 로직 줄에 더하기
+    - 상위 계획서 변경 이력에 "대표자 관리 화면" 항목이 있습니다. 탭과 주소, 입구, 데이터 타입, 폼 칸과 검사, `onSubmit`을 고른 이유, 2단계로 미룬 것을 적습니다.
+    - `grep -n "ComingSoon" CLAUDE.md`가 아무것도 찾지 않습니다.
+  - 증거:
+    - CLAUDE.md는 77줄입니다. Architecture를 다음처럼 고쳤습니다.
+      - 18~19행: `admin` 구현과 `?tab=register`
+      - 27~28행: `components/admin/`
+      - 31행: `common/`에서 ComingSoon 뺌
+      - 35~37행: 순수 로직 줄에 `ownership.ts`, `church-registration.ts`
+    - CLAUDE.md Commands의 `npm run test` 설명에서 "개발 서버와 같이 켜도 됨"을 "끄고 돌린다"로 고쳤습니다. 이번 측정과 맞지 않았기 때문입니다(변경 이력 참고).
+    - `grep -n "ComingSoon" CLAUDE.md` → 결과 없음(exit 1)
+    - 상위 계획서 변경 이력 끝에 "2026-10-06: 대표자 관리 화면" 항목을 더했습니다. 범위, 입구, 데이터, 신청 폼, `onSubmit`을 쓴 이유, shadcn, ComingSoon 삭제를 적었습니다.
+    - `docs/lessons.md`에 네 곳을 더하거나 고쳤습니다.
+      - 새 항목 "`<form action>`은 처리 뒤 입력을 비운다(React 19)"
+      - shadcn 4.21에 `FieldError`의 `role="alert"`와 체크박스의 `FieldContent`
+      - "부하가 크면" 항목에 개발 서버를 켠 채 돌릴 때의 측정과 대응
+      - "개발 서버와 빌드·테스트를 동시에" 항목에 e2e가 100개를 넘은 뒤의 주의
+
+## 리스크와 멈출 조건
+- **`npx shadcn add`가 예상보다 많이 바꿈** (새 npm 패키지, `globals.css` 토큰 덮어쓰기): 바뀐 내용을 `git diff`로 보고, 기존 토큰을 덮어쓰면 되돌린 뒤 사용자에게 묻습니다. 새 패키지가 생기면 변경 이력에 적습니다.
+- **파일 입력의 e2e:** Playwright `setInputFiles`에 `{ name, mimeType, buffer }`를 넘깁니다. 크기 검사는 단위 테스트가 맡고, e2e는 확장자 오류와 정상 파일만 봅니다.
+- **e2e 시간 증가:** 폼 테스트가 칸을 많이 채우므로 채우는 도우미 함수를 spec 안에 둡니다. 전체 e2e가 크게 느려지면(지금 약 35~45초) 변경 이력에 적습니다.
+- 계획 밖 결정(범위·데이터 구조 변경, 새 의존성, 되돌리기 어려운 작업)이 필요해지면 다음 task로 넘어가지 않고 사용자에게 묻습니다.
+
+## 검증
+- 전체 완료 조건: `npm run lint && npm run build`, `npm run test`(단위 64개 + T1·T2, e2e 102개 + admin)
+- 화면 확인: `npm run dev`(3000)에서 375 / 768 / 1440px로 다음을 봅니다. 가로 넘침과 콘솔 오류가 없어야 하고, 키보드로 탭과 폼을 끝까지 지날 수 있어야 합니다.
+  - `/admin`
+  - `/admin?tab=register`(빈 상태, 오류 상태, 접수 상태)
+- 일부러 깨뜨려 보기(확인 후 되돌리고 `npm run test` 재통과):
+  - 페이지가 `tab`을 무시하면 탭 e2e만 실패해야 합니다.
+  - 검사 함수가 연락처를 검사하지 않으면 단위 테스트의 연락처 경우와 e2e 형식 오류 테스트만 실패해야 합니다.
+- 마무리에 `/code-review`로 독립 리뷰를 받습니다.
+
+## 범위 밖
+- 관리자 승인 화면, 역할(`member`·`admin`)에 따른 화면 분기. 로그인과 함께 2단계에서 합니다.
+- 실제 저장, 증빙 파일 업로드, 우편번호 검색과 좌표 넣기(2단계 Supabase·Storage·Geocoder)
+- 행사·공지 쓰기와 교회 정보 수정의 실제 동작(버튼 자리만 둠)
+- 교회 상세 페이지(`churches/[id]`). 1단계에 남은 다른 화면이라 따로 계획합니다.
+- 서연교회의 행사·공지 목데이터를 늘리는 일
+
+## 변경 이력
+<!-- run-plan이 계획과 달라진 점을 날짜·내용·이유로 적는다 -->
+- 2026-10-06 (커밋 시점): 결정의 "task마다 커밋"과 달리, task 중에는 커밋하지 않고 마무리 뒤 사용자가 요청할 때 커밋합니다. CLAUDE.md 규칙이 "커밋은 사용자가 요청할 때만"이기 때문입니다. T4~T6은 같은 파일(`page.tsx`, `ChurchRegisterForm.tsx`, `admin.spec.ts`)을 나눠 고치므로, 커밋할 때 한 커밋으로 묶을 수 있습니다.
+- 2026-10-06 (T5, 전체 e2e 흔들림의 조건을 좁힘): 배운 점의 "부하가 크면 안정 대기가 5초를 넘는다(관찰 중)"가 다시 났습니다.
+  - 개발 서버(3000)를 켠 채 `npm run test:e2e`를 돌리면 3번 모두 실패했습니다. 실패한 테스트는 매번 다른 1~2개였습니다.
+    - 대표자 관리 탭 클릭: `visible, enabled and stable` 대기 5초 초과
+    - 커뮤니티 분류 칩 클릭: 같은 대기 초과
+    - 커뮤니티 목록: 30초 시간 초과
+  - 개발 서버를 끈 뒤에는 3번 모두 `116 passed`였습니다.
+  - 부하 평균은 테스트 중에 12에서 64까지 올랐고, 끝난 뒤의 `ps`에는 무거운 다른 프로세스가 없었습니다.
+  - 그래서 테스트는 개발 서버를 끈 뒤 돌리고, 화면 확인과 번갈아 합니다. 테스트 설정(worker 수, `actionTimeout`)은 바꾸지 않았습니다(사용자 결정 사항).
+  - T6에서 개발 서버 없이도 5번 중 1번 났습니다(지도 칩 클릭, 같은 대기 초과). 실패한 클릭은 모두 `transition-colors`가 붙은 링크(탭, 칩)였습니다. 다만 그런 링크를 누르는 테스트가 원래 많아서, 이것이 원인인지는 확인하지 않았습니다.
+- 2026-10-06 (커밋): 사용자 요청으로 커밋했습니다. 코드는 task별 4개(T1 `3380420`, T2 `247aa10`, T3 `80861d7`, T4~T6 `9e591a6`)이고, 문서는 따로 1개입니다. T4~T6은 같은 파일을 나눠 고쳐서 한 커밋으로 묶었습니다. T2 커밋은 pre-commit에서 커뮤니티 칩 클릭이 같은 대기 초과로 실패해 한 번 거부됐습니다. `--no-verify` 없이 다시 커밋해 `118 passed`로 통과했습니다.
+
+## 검증 결과
+<!-- run-plan이 마무리 검증의 실제 출력 근거를 적는다. 리뷰에서 반영하지 않은 지적은 이유와 함께 적는다 -->
+- **전체 완료 조건(개발 서버 없음):**
+  - `npm run lint` 오류 0건
+  - `npm run test` → 단위 `Test Files 8 passed`, `Tests 79 passed`, e2e `117 passed`, `1 failed`
+    - 실패는 행사 "'연합'을 누르면…"의 칩 클릭이었습니다(`visible, enabled and stable` 5초 초과, 행사 코드는 바꾸지 않음).
+    - 바로 다시 돌린 `npm run test:e2e` → `118 passed (1.0m)`
+    - 기존 102개 + 대표자 관리 16개입니다. 단위는 기존 64개 + 입력 검사 11개 + 교회별 거르기 4개입니다.
+  - 개발 서버 없이 돌린 전체 e2e는 이 작업 동안 8번이고, 그중 2번이 이 흔들림으로 실패했습니다(지도 칩, 행사 칩). 변경 이력과 배운 점에 적었습니다.
+- **화면(개발 서버 3000, 확인할 때만 띄우고 테스트 전에 끔):**
+  - `/admin`: 375 / 768 / 1440px(T4)
+  - `/admin?tab=register` 빈 제출: 375 / 768 / 1440px(T5). 동의 줄을 고친 뒤 다시 봤습니다.
+  - 접수 화면: 375 / 1440px(T6)
+  - 모두 `overflow: false`, 콘솔 오류 `[]`
+- **키보드(1440px, 신청 탭):**
+  - Tab 순서가 화면 순서와 같습니다: 교회 이름 → 담임목사 → 지역 → 교인 수 → 주소 → 한 줄 소개 → 대표자 이름 → 직분 → 연락처 → 증빙 서류 → 동의 → 신청하기
+  - 칸에서 Enter를 누르면 내지고, 포커스가 첫 오류 칸(`churchName`)으로 갑니다.
+  - 동의 체크박스는 Space로 켜집니다(`aria-checked="true"`).
+- **일부러 깨뜨려 보기(각각 되돌린 뒤 `cmp`로 원본 확인):**
+  - 페이지가 `tab`을 무시함(`"register"` 비교를 없는 값으로) → `admin.spec.ts`·`home.spec.ts` 53개 중 9개가 실패했습니다. 탭 전환 1개, 홈 입구 2개, 폼·접수 6개로, 신청 탭이 필요한 테스트입니다. "내 교회"와 "모르는 탭 값" 테스트는 통과했습니다. 계획의 "탭 e2e만"은 신청 탭에 의존하는 테스트 모두를 뜻하는 셈입니다.
+  - 연락처 꼴 검사를 끔 → 단위 "연락처는 휴대전화 번호 꼴만 받는다" 1개(`1 failed | 10 passed`)와 e2e "연락처와 증빙 서류의 꼴이 틀리면 그 칸만 막는다" 1개(`1 failed`, `15 passed`)만 실패했습니다. 빈 연락처 검사는 남아 있어 빈 제출 테스트는 통과했습니다.
+  - (T1) 증빙 크기 경계를 `>=`로 → "정확히 10MB" 1개만 실패
+- **독립 리뷰(`/code-review medium`):** 지적 0건입니다.
+  - 리뷰가 확인한 것:
+    - 행사·공지는 교회로 먼저 거른 뒤 날짜순 정렬과 개수 제한을 합니다.
+    - 모르는 `tab` 값과 겹친 `tab` 값은 "내 교회"로 갑니다.
+    - 생성 파일의 `import { cn } from "cn"`이 풀립니다.
+    - `FieldError`에 넘긴 `role={undefined}`가 뒤에서 펼쳐져 alert 역할을 지웁니다.
+    - 동의 체크박스의 숨은 input은 `aria-invalid`가 없어 포커스가 보이는 칸으로 갑니다.
+    - "새로 작성"은 폼을 새로 그려 칸이 실제로 비워집니다.
+    - ComingSoon을 쓰는 곳이 없습니다.
+  - 참고 1개는 반영하지 않았습니다. 머리말과 대시보드는 역할이나 인증 상태와 상관없이 사용자를 대표자로 적습니다. 지금 목데이터의 사용자는 늘 승인된 대표자라 틀릴 수 없고, 역할에 따른 화면 분기는 이 계획의 범위 밖(2단계)입니다.

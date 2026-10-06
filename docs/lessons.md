@@ -46,6 +46,11 @@
 - 레이아웃 props 타입은 전역 `LayoutProps<"/">`를 쓴다.
 - 이런 차이는 추측하지 말고 `node_modules/next/dist/docs/`에서 먼저 확인한다.
 
+### `<form action>`은 처리 뒤 입력을 비운다(React 19)
+- **상황:** 1단계 신청 폼은 입력을 검사해 오류를 보여 주고 저장하지 않는다. Next 문서의 꼴(`useActionState` + `<form action>`)을 그대로 쓰면, 검사에 걸렸을 때 사용자가 쓴 내용이 지워진다.
+- **원인:** `<form action={fn}>`으로 내면 React가 transition 안에서 `requestFormReset`을 불러 비제어 입력을 비운다(`react-dom-client.development.js`의 `startHostTransition`, React 19.2.8).
+- **대응:** 1단계는 `onSubmit`에서 `preventDefault()` 뒤 `FormData`를 읽는다. 2단계에서 Server Action으로 바꿀 때는 오류 상태에 입력값을 함께 돌려주고 `defaultValue`로 다시 채우거나, 제어 입력을 쓴다.
+
 ### 검색어에 따라 바뀌는 탭 제목은 기본 미리 불러오기에서 어긋난다
 - **상황:** 행사 페이지에서 고른 태그를 `generateMetadata`로 탭 제목에 넣었다("연합 태그 행사"). 주소로 바로 들어오면 맞았다. 그런데 칩을 눌러 이동하면 다른 태그("찬양 태그 행사")나 "행사"의 제목이 남았다.
 - **원인:** `Link`의 기본(static) 미리 불러오기는 page 칸과 metadata 칸을 검색어 없이 한 칸(`Fallback`)으로 담는다. 검색어별로 나누는 것은 `prefetch={true}`(Full) 같은 runtime 미리 불러오기뿐이다(`next/dist/client/components/segment-cache/vary-path.js`의 `getSegmentVaryPathForRequest`).
@@ -56,7 +61,7 @@
 - **함정:** 개발 서버는 미리 불러오지 않으므로 재현되지 않는다. 프로덕션 빌드(`next start`)에서 요청과 `document.title`을 함께 기록해 확인한다([행사 페이지 계획](plans/2026-10-03-events-page.md) T4).
 
 ### 개발 서버와 빌드·테스트를 동시에 돌릴 수 있다
-- `next dev`는 `.next/dev`, `next build`는 `.next`에 출력해서 함께 돌아도 된다.
+- `next dev`는 `.next/dev`, `next build`는 `.next`에 출력해서 함께 돌아도 된다. 다만 e2e가 100개를 넘은 뒤로는 개발 서버를 켠 채 `npm run test`를 돌리면 부하로 클릭이 흔들린다(아래 "부하가 크면" 항목). 화면 확인과 테스트는 번갈아 한다.
 - 단, 같은 프로젝트에 `next dev`를 두 번 띄우면 두 번째는 실행되지 않는다(`.next/dev/lock`). 그래서 테스트는 개발 서버를 띄우지 않고 빌드 결과를 3100 포트로 띄운다.
 - **`next start`는 빌드와 함께 돌 수 없다:** `next start`는 `.next`를 읽는다. 그동안 `npm run build`나 `npm run test`(안에서 빌드함)가 `.next`를 다시 만들면, 떠 있던 서버가 내려준 HTML의 chunk 이름이 사라져 `/_next/static/chunks/*`가 404·500이 된다. 3000에 다른 세션이 띄운 `npm run start`가 있어 이렇게 깨졌다. 그래서 화면 확인은 다른 포트의 `next dev`(`npx next dev -p 3001`)로 했다([공지 페이지 계획](plans/2026-10-03-notices-page.md) T4).
   - 화면이 이상하면 먼저 그 포트에 무엇이 떠 있는지 본다(`lsof -iTCP:3000 -sTCP:LISTEN`, `ps -o command -p <PID>`). `next-server`라고만 나와도 부모 프로세스가 `npm run start`이면 프로덕션 서버다.
@@ -82,6 +87,8 @@
 - **shadcn 4.21:**
   - `clsx`와 `tailwind-merge` 대신 shadcn이 배포하는 `cn` 패키지를 설치한다(이상한 패키지가 아니다).
   - `init`은 프리셋을 대화형으로 묻는다. 비대화형으로 돌리려면 `-t next -b radix -p nova`처럼 지정한다.
+  - **`FieldError`는 칸마다 `role="alert"`다:** 빈 폼을 내면 오류 7개가 한꺼번에 읽힌다. 칸 메시지에는 `role={undefined}`를 넘기고 `aria-describedby`로 칸의 설명이 되게 했다. 알림은 폼 위 요약("입력을 확인해 주세요 (N개)") 한 곳에서만 한다. `add field`는 label과 separator를 함께 만든다([대표자 관리 계획](plans/2026-10-06-admin-page.md) T5).
+  - **체크박스와 문구는 `FieldContent`로 묶는다:** `Field orientation="horizontal"`에 체크박스, 라벨, 오류를 나란히 두고 `flex-wrap`을 주면 375px에서 체크박스만 한 줄에 남았다. 라벨과 오류를 `FieldContent`로 감싸 체크박스 옆 한 칸에 둔다.
 
 ## 카카오맵
 
@@ -151,7 +158,10 @@
 - `fullPage: true`로 찍으면 촬영하는 동안 화면이 커져, 지도가 타일을 다시 받는 중인 회색 자리가 찍혔다. 지도처럼 크기에 반응하는 화면은 화면 크기 그대로 찍는다.
 
 ### 부하가 크면 "안정" 대기가 5초를 넘는다(관찰 중)
-- 테스트가 82개로 는 뒤 전체 실행에서 지도와 무관한 클릭 하나가 가끔 `waiting for element to be visible, enabled and stable`에서 `actionTimeout`(5초)을 넘겼다. 따로 돌리면 통과하고, 같은 시간대 master는 통과했다. 기록은 [지도 페이지 계획](plans/2026-10-03-map-page.md) 변경 이력에 있다. 다시 나면 원인을 더 좁힌다.
+- 테스트가 82개로 는 뒤 전체 실행에서 지도와 무관한 클릭 하나가 가끔 `waiting for element to be visible, enabled and stable`에서 `actionTimeout`(5초)을 넘겼다. 따로 돌리면 통과하고, 같은 시간대 master는 통과했다. 기록은 [지도 페이지 계획](plans/2026-10-03-map-page.md) 변경 이력에 있다.
+- **개발 서버가 켜져 있으면 거의 늘 난다(116~118개일 때):** 대표자 관리 작업에서 개발 서버(3000)를 켠 채 전체 e2e를 3번 돌리자 3번 모두 매번 다른 테스트 1~2개가 실패했다. 끈 뒤에는 3번 모두 통과했다. 테스트 중 부하 평균은 12에서 64까지 올랐다. 개발 서버 없이도 5번 중 1번 났다. 실패한 클릭은 모두 `transition-colors`가 붙은 탭·칩 링크였다. 다만 그런 링크를 누르는 테스트가 원래 많아서, 이것이 원인인지는 확인하지 않았다([대표자 관리 계획](plans/2026-10-06-admin-page.md) 변경 이력).
+  - **대응:** 전체 테스트는 개발 서버를 끈 뒤 돌린다. 그래도 계속 나면 worker 수나 `actionTimeout`을 바꿀지 정한다. 테스트 설정을 바꾸는 일이라 사용자가 정한다.
+  - `browser.newContext: Test ended`(30초)는 화면 코드가 돌기 전에 브라우저 창을 만들지 못한 것이다. 그때 `mds`(Spotlight 색인)가 CPU 40%를 쓰고 있었다. 빌드가 파일을 많이 만든 직후라 색인이 붙은 것으로 보인다.
 
 ## 날짜와 시간
 
