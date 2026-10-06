@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { ArticleRow } from "@/components/common/ArticleRow";
 import { FilterChips } from "@/components/common/FilterChips";
-import { NOTICE_CATEGORY_TONES } from "@/components/notice/categoryTones";
+import { NoticeRow } from "@/components/notice/NoticeRow";
 import { getNoticeCategories, getRecentNotices } from "@/lib/data/notices";
-import { formatDate } from "@/lib/datetime";
 import { parseSearchParam } from "@/lib/search-params";
 
 // 탭 제목에 고른 분류를 넣지 않는다. 검색어에 따라 바뀌는 제목은 Link 기본 미리 불러오기에서 어긋난다
@@ -71,22 +69,7 @@ export default async function NoticesPage({ searchParams }: PageProps<"/notices"
         ) : (
           <ul role="list" className="divide-y rounded-xl border bg-card px-4 sm:px-5">
             {notices.map((notice) => (
-              // 공지는 따로 사진이 없어 그 교회 사진을 썸네일로 쓴다
-              <ArticleRow
-                key={notice.id}
-                imageUrl={notice.church.imageUrl}
-                title={notice.title}
-                category={notice.category}
-                categoryClassName={NOTICE_CATEGORY_TONES[notice.category]}
-                excerpt={notice.summary}
-                meta={
-                  <>
-                    <time dateTime={notice.publishedAt}>{formatDate(notice.publishedAt)}</time>
-                    <span aria-hidden="true"> · </span>
-                    {notice.church.name}
-                  </>
-                }
-              />
+              <NoticeRow key={notice.id} notice={notice} />
             ))}
           </ul>
         )}

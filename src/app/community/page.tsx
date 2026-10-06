@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Users } from "lucide-react";
-import { ArticleRow } from "@/components/common/ArticleRow";
 import { FilterChips } from "@/components/common/FilterChips";
-import { POST_CATEGORY_TONES } from "@/components/post/categoryTones";
+import { PostRow } from "@/components/post/PostRow";
 import { getPostCategories, getRecentPosts } from "@/lib/data/posts";
-import { formatRelativeTime } from "@/lib/datetime";
 import { parseSearchParam } from "@/lib/search-params";
 
 // 탭 제목에 고른 분류를 넣지 않는다. 검색어에 따라 바뀌는 제목은 Link 기본 미리 불러오기에서 어긋난다
@@ -73,21 +71,7 @@ export default async function CommunityPage({ searchParams }: PageProps<"/commun
         ) : (
           <ul role="list" className="divide-y rounded-xl border bg-card px-4 sm:px-5">
             {posts.map((post) => (
-              <ArticleRow
-                key={post.id}
-                imageUrl={post.imageUrl}
-                title={post.title}
-                category={post.category}
-                categoryClassName={POST_CATEGORY_TONES[post.category]}
-                excerpt={post.excerpt}
-                meta={
-                  <>
-                    {post.church.name}
-                    <span aria-hidden="true"> · </span>
-                    <time dateTime={post.createdAt}>{formatRelativeTime(post.createdAt, now)}</time>
-                  </>
-                }
-              />
+              <PostRow key={post.id} post={post} now={now} />
             ))}
           </ul>
         )}
