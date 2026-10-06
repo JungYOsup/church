@@ -1,17 +1,28 @@
 import Link from "next/link";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, getUnreadNotificationCount } from "@/lib/data/user";
+import { getNotifications, getUnreadNotificationCount } from "@/lib/data/notifications";
+import { getCurrentUser } from "@/lib/data/user";
+import { formatRelativeTime } from "@/lib/datetime";
 import { Logo } from "./Logo";
 import { MainNav } from "./MainNav";
 import { MobileNav } from "./MobileNav";
+import { NotificationMenu } from "./NotificationMenu";
 import { UserMenu } from "./UserMenu";
 
 export async function Header() {
-  const [user, unreadCount] = await Promise.all([
+  const [user, notifications, unreadCount] = await Promise.all([
     getCurrentUser(),
+    getNotifications(),
     getUnreadNotificationCount(),
   ]);
+  // "N시간 전"은 서버가 한 번 계산해 넘긴다. 클라이언트에서 다시 계산하면 시각이 달라 hydration이 어긋난다.
+  // 정적 페이지(홈)에서는 빌드 시각 기준이다. 다시 그리는 주기는 배포 작업에서 정한다
+  const now = new Date();
+  const notificationItems = notifications.map((notification) => ({
+    ...notification,
+    timeLabel: formatRelativeTime(notification.createdAt, now),
+  }));
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/80">
@@ -27,20 +38,7 @@ export async function Header() {
               <Search className="size-5" />
             </Link>
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="relative"
-            aria-label={unreadCount > 0 ? `알림 ${unreadCount}개` : "알림"}
-          >
-            <Bell className="size-5" />
-            {unreadCount > 0 && (
-              <span
-                className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500"
-                aria-hidden="true"
-              />
-            )}
-          </Button>
+          <NotificationMenu notifications={notificationItems} unreadCount={unreadCount} />
           <UserMenu user={user} />
         </div>
       </div>

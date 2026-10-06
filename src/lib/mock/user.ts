@@ -10,8 +10,6 @@ export const mockCurrentUser: UserProfile = {
   role: "church_rep",
 };
 
-export const mockUnreadNotificationCount = 3;
-
 // 현재 사용자의 대표자 인증. 행사처럼 날짜를 고정하지 않고 "서울 날짜로 며칠 전 몇 시"로 적는다.
 export function createMockVerification(now: Date): RepVerification {
   return {

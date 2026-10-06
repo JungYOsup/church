@@ -24,6 +24,21 @@ export interface RepVerification {
   reviewedAt: string | null;
 }
 
+/** 알림 종류. 알림 목록의 아이콘을 고른다 */
+export type NotificationKind = "event" | "notice" | "church" | "verification";
+
+/** 현재 사용자에게 온 알림. 브라우저의 Notification과 이름이 겹치지 않게 UserNotification으로 둔다 */
+export interface UserNotification {
+  id: string;
+  kind: NotificationKind;
+  message: string;
+  /** 누르면 갈 화면 */
+  href: string;
+  /** 알림이 온 시각 (ISO 8601) */
+  createdAt: string;
+  read: boolean;
+}
+
 /** 홈 통계 카드에 보여 줄 연합 현황 숫자 */
 export interface Stats {
   /** 등록된 교회 수 */
