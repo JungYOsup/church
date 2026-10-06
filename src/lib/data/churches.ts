@@ -1,8 +1,15 @@
+import { collectRegions, filterByRegion } from "@/lib/geo";
 import { mockChurches, mockRecommendedChurchIds } from "@/lib/mock/churches";
 import type { Church, WithChurch } from "@/lib/types";
 
-export async function getChurches(): Promise<Church[]> {
-  return mockChurches;
+/** 교회를 정해 둔 순서대로 돌려준다. region(시·도)을 주면 그 지역의 교회만이다 */
+export async function getChurches({ region = null }: { region?: string | null } = {}): Promise<Church[]> {
+  return filterByRegion(mockChurches, region);
+}
+
+/** 교회가 있는 지역(시·도). 교회가 많은 지역이 앞이다 */
+export async function getChurchRegions(): Promise<string[]> {
+  return collectRegions(mockChurches);
 }
 
 /** 홈에 보여 줄 추천 교회를 정해 둔 순서대로 돌려준다 */
