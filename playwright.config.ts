@@ -23,6 +23,10 @@ export default defineConfig({
   ],
   webServer: {
     command: `npm run build && npm run start -- -p ${PORT}`,
+    // 카카오맵 키는 .env.local과 상관없이 가짜로 빌드한다(process.env가 .env.local보다 먼저다).
+    // 지도 테스트는 SDK 요청을 가짜로 받으므로(e2e/fixtures.ts) 진짜 키가 필요 없다.
+    // 그래서 테스트 뒤 .next에는 가짜 키가 남는다. 데모는 npm run build를 다시 한 뒤 띄운다.
+    env: { NEXT_PUBLIC_KAKAO_MAP_KEY: "e2e-fake-key" },
     url: BASE_URL,
     timeout: 180_000,
     reuseExistingServer: false,
