@@ -189,6 +189,16 @@
 
 ### 권한 규칙은 의도한 것까지 막는다
 - `Bash(rm -rf *)` 차단 규칙이 세션 임시 폴더 정리도 막았다. 규칙이 동작한다는 증거이기도 하다. 임시 작업은 지우는 대신 새 폴더 이름을 쓴다.
+- **확인이 필요 없는 일까지 묻지 않는다:**
+  - **상황:** 대표자 관리 작업에서 확인 창이 9번 떴고, 그중 6번은 필요 없었다.
+    - 화면 확인용 임시 스크립트를 지우는 `rm` 5번(ask `Bash(rm *)`)
+    - staging에서 빼기만 하는 `git reset -- 파일` 1번(ask `Bash(git reset *)`)
+  - **원인:** 판정 순서가 deny → ask → allow이고, 먼저 맞는 규칙이 이긴다(code.claude.com/docs/en/permissions). 더 구체적인 allow도 ask를 이기지 못하므로, allow에 예외를 더하는 방식으로는 확인 창이 사라지지 않는다. `*`는 공백을 포함해 아무 글자나 맞아서, `Bash(git reset *)`가 unstage까지 잡았다.
+  - **대응:** ask 규칙 자체를 좁혔다([계획](plans/2026-10-06-permission-prompts.md)).
+    - rm: 재귀 삭제(`rm *-r*`, `rm *-R*`, `rm *-fr*`, `rm *-fR*`)만 묻는다. `-rf`·`-fr`은 deny가 먼저 막는다.
+    - git reset: 작업 내용을 버리는 `--hard`, `--merge`만 묻는다.
+    - push, clean, `checkout --`, restore, `--amend`, `--no-verify`, 배포는 그대로 묻는다.
+  - **임시 스크립트는 프로젝트 밖에 둔다:** Playwright 스크립트를 scratchpad에 두고 그대로 실행하면 `@playwright/test`를 찾지 못한다(`ERR_MODULE_NOT_FOUND`). Node가 파일이 있는 폴더 기준으로 `node_modules`를 찾기 때문이다. 프로젝트 폴더에서 `node --input-type=module < <scratchpad>/shot.mjs`처럼 표준 입력으로 넘기면 프로젝트 기준으로 찾는다. 그래서 프로젝트 폴더에 파일을 만들 일도, 지울 일도 없다.
 
 ### Stop hook을 만들 때
 - 다시 막을 때는 입력의 `stop_hook_active`가 `true`가 된다. 연속 8번 막히면 Claude Code가 강제로 멈춘다. 재시도에서도 실패하면 막지 말고 경고만 띄운다.
