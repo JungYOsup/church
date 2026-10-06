@@ -40,7 +40,7 @@ export function RepRegisterCta() {
         ))}
       </ul>
       <Button asChild size="lg" className="relative mt-auto h-12 w-full text-base">
-        <Link href="/admin">
+        <Link href="/admin?tab=register">
           <CirclePlus className="size-5" />
           우리 교회 등록하기
         </Link>
