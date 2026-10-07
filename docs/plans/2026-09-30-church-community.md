@@ -276,3 +276,10 @@ src/components/
     - "우리 교회 관리"는 `/admin` 링크임
     - "내 정보"와 "로그아웃"은 끈 채 "로그인 기능과 함께 열립니다"를 적음
   - **공통으로 올린 것:** 공지·글 한 줄을 `notice/NoticeRow`, `post/PostRow`로 올려 목록 페이지와 검색이 같이 씀
+- 2026-10-07: 목데이터 상태로 Vercel에 먼저 배포함 ([세부 계획](2026-10-07-vercel-deploy.md)). 3단계(배포)의 앞부분을 2단계(Supabase)보다 앞당김. 공개 URL을 일찍 얻고, 배포에서만 드러나는 문제를 지금 잡고, Supabase를 붙일 때 단계마다 운영에서 확인하기 위함
+  - **운영 주소:** https://church-community-eight.vercel.app (Vercel 프로젝트 `church-community`, Hobby). `church-community.vercel.app`은 이미 다른 사람이 쓰고 있어 Vercel이 `-eight`를 붙임
+  - **연결:** 대시보드에서 GitHub 저장소를 가져옴. master push는 운영 배포, 다른 branch는 미리보기 배포(Vercel 로그인 필요)
+  - **홈을 요청마다 그림:** 2026-10-02의 "다시 그리는 주기는 Supabase를 붙일 때 정함"을 바꿈. 정적이던 라우트가 홈뿐이라, 배포한 날에 굳어 며칠 뒤 "다가오는 행사"에 지난 날짜가 남았기 때문. `await connection()`을 씀. 주기적 재생성(ISR)은 기한이 지난 뒤 첫 방문자에게 옛 페이지를 먼저 보여 줘, 가끔 들르는 포트폴리오에 맞지 않음. Supabase 단계에서 캐시 전략을 다시 정함
+  - **빌드 설정:** `package.json`의 `engines.node`를 `22.x`로 둠(Vercel 기본은 24이고 `.nvmrc`를 읽지 않음). `vercel.json`에서 함수 지역을 기본 `iad1`(워싱턴)에서 `icn1`(서울)로 옮김. Supabase도 서울 지역에 둘 예정
+  - **카카오맵:** 키는 Vercel 환경변수 Production에만 넣고, 운영 주소를 JavaScript SDK 도메인에 등록함(3단계 절의 "카카오 콘솔에 배포 도메인을 추가합니다"). 미리보기 배포는 대체 화면
+  - **README·CI·커스텀 도메인**은 이번에 하지 않음

@@ -102,6 +102,7 @@
 - **상황:** 등록한 주소(3000)에서도 지도 대신 대체 화면이 나왔다. 브라우저에는 `sdk.js` 요청이 `net::ERR_BLOCKED_BY_ORB`로 실패했다는 것뿐이었다.
 - **원인:** 카카오가 스크립트 대신 JSON 오류(`403 {"errorType":"NotAuthorizedError","message":"App(…) disabled OPEN_MAP_AND_LOCAL service."}`)를 돌려줬고, Chrome이 스크립트 자리의 JSON을 막아(Opaque Response Blocking) 본문이 보이지 않았다. 카카오 앱에서 **카카오맵 사용 설정**이 꺼져 있었다. 등록하지 않은 주소(3001)에서도 같은 모양으로 실패한다.
 - **대응:** Playwright에서 `page.route`로 그 요청을 가로채 `route.fetch()`로 상태와 본문을 찍는다. 키는 출력에서 가린다(`appkey=***`). 콘솔에서 카카오맵 사용을 켜자 200이 왔다([지도 페이지 계획](plans/2026-10-03-map-page.md) T3).
+- **막힌 요청은 `response`에 잡히지 않는다:** ORB로 막힌 요청은 Playwright의 `response` 이벤트가 아니라 `requestfailed`(`net::ERR_BLOCKED_BY_ORB`)로만 오고, 콘솔 오류도 남지 않는다. `response`만 세다가 "SDK 요청이 없다(키가 빠졌다)"고 잘못 읽었다. `request`·`requestfailed`까지 함께 기록한다([배포 계획](plans/2026-10-07-vercel-deploy.md) T2).
 
 ### 지도를 만든 직후 `setBounds`로 맞추면 `idle`이 오지 않는다
 - **상황:** 교회 15곳에 맞춘 멀리 보는 수준(10)인데 이름표 15개가 다 보여 겹쳤다. 축소·확대로 `idle`이 오면 이름표가 맞게 숨었다.
@@ -184,6 +185,25 @@
   - **대응:** 전체 테스트는 개발 서버를 끈 뒤 돌린다. 그래도 계속 나면 worker 수나 `actionTimeout`을 바꿀지 정한다. 테스트 설정을 바꾸는 일이라 사용자가 정한다.
   - `browser.newContext: Test ended`(30초)는 화면 코드가 돌기 전에 브라우저 창을 만들지 못한 것이다. 그때 `mds`(Spotlight 색인)가 CPU 40%를 쓰고 있었다. 빌드가 파일을 많이 만든 직후라 색인이 붙은 것으로 보인다.
 - **동시 실행 수를 5에서 3으로 줄였다(`playwright.config.ts`의 `workers: 3`):** 기본값은 CPU의 절반(이 컴퓨터는 5)이다. 줄인 뒤 교회 상세 작업 동안 개발 서버를 끄고 돌린 전체 e2e 8번(118~132개)이 모두 통과했다. 시간은 40~49초로 5 workers 때와 비슷했고, 테스트 중 부하 평균은 17 안팎이었다(5 workers 때 26~64). 그래도 다시 나면 `actionTimeout`을 볼 차례다([교회 상세 계획](plans/2026-10-06-church-detail-page.md) T1).
+
+## 배포 (Vercel)
+
+### Vercel은 `.nvmrc`가 아니라 `engines`를 본다
+- 기본 Node는 24.x이고, `package.json`의 `engines.node`가 프로젝트 설정보다 앞선다(공식 문서 Supported Node.js versions). `.nvmrc`는 문서에 나오지 않는다. 그래서 `"engines": { "node": "22.x" }`를 둔다.
+- 빌드 로그에는 Node 버전 줄이 나오지 않는다. 확인하려면 빌드 명령에서 `node -v`를 찍어야 한다.
+- `npm install --package-lock-only`로 lock에 `engines`를 넣으면 관계없는 선택 의존성 항목(`@tailwindcss/oxide-wasm32-wasi` 아래 `@emnapi/*`)까지 붙었다. 차이를 좁히려고 lock의 루트 항목에 `engines`만 넣고 `npm ci --dry-run`으로 확인했다.
+
+### 정적 페이지는 상대 날짜 목데이터를 배포한 날에 굳힌다
+- **상황:** 빌드 결과에서 홈만 `○`(정적)였다. 목데이터는 "그린 시각부터 며칠 뒤"라, 배포하고 며칠 지나면 홈 "다가오는 행사"에 지난 날짜가 남는다. 로컬에서는 빌드를 자주 하니 보이지 않는다.
+- **대응:** 홈에서 `await connection()`(`next/server`)을 불러 요청마다 그린다. 주기적 재생성(`revalidate`)은 기한이 지난 뒤 첫 방문자에게 옛 페이지를 먼저 보여 줘, 가끔 들르는 데모에 맞지 않다. e2e는 `/`의 `cache-control`에 `no-store`가 있는지 본다(정적이면 `s-maxage=31536000`).
+
+### 운영 주소는 프로젝트 이름과 다를 수 있다
+- 프로젝트 `church-community`의 운영 주소는 `church-community-eight.vercel.app`이었다. `church-community.vercel.app`은 남의 사이트("ELIM CHURCH")였다. 이름만 보고 주소를 짐작하지 말고 대시보드의 Domains에서 확인한다.
+- GitHub deployments API(`gh api repos/<저장소>/deployments/<id>/statuses`)는 배포마다 생기는 주소만 준다. 이 주소와 `<프로젝트>-<계정>.vercel.app`은 Vercel 로그인을 요구한다(302 → sso-api).
+- `x-vercel-id: icn1::icn1::…`에서 앞은 요청을 받은 CDN 지역, 뒤는 함수가 실행된 지역이다. 함수 지역은 `vercel.json`의 `regions`로 정한다(Hobby는 한 곳).
+
+### 카카오 도메인 등록은 다시 배포하지 않아도 된다
+- 키는 빌드 때 번들에 박히지만, 도메인 허용은 카카오가 요청 때마다 판단한다. 운영 주소를 JavaScript SDK 도메인에 더하자 같은 배포에서 바로 지도가 떴다. 등록 전에는 SDK 요청이 ORB로 막혀 대체 화면이었다.
 
 ## 날짜와 시간
 
