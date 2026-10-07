@@ -17,7 +17,7 @@ export async function Header() {
     getUnreadNotificationCount(),
   ]);
   // "N시간 전"은 서버가 한 번 계산해 넘긴다. 클라이언트에서 다시 계산하면 시각이 달라 hydration이 어긋난다.
-  // 정적 페이지(홈)에서는 빌드 시각 기준이다. 다시 그리는 주기는 배포 작업에서 정한다
+  // 페이지가 요청마다 그려지므로 요청 시각 기준이다. 정적으로 남은 404 페이지만 빌드 시각 기준이다
   const now = new Date();
   const notificationItems = notifications.map((notification) => ({
     ...notification,

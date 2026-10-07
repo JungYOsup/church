@@ -20,6 +20,15 @@ test.describe("홈 레이아웃", () => {
   });
 });
 
+test.describe("홈 렌더링", () => {
+  // 빌드 때 정적으로 만들면 배포한 날을 기준으로 굳어, 며칠 뒤 "다가오는 행사"에 지난 날짜가 남는다.
+  // 요청마다 그린 페이지는 no-store를, 정적 페이지는 s-maxage를 돌려준다
+  test("홈은 요청마다 새로 그린다", async ({ request }) => {
+    const response = await request.get("/");
+    expect(response.headers()["cache-control"]).toContain("no-store");
+  });
+});
+
 test.describe("홈 히어로 버튼", () => {
   test("'교회 찾기'를 누르면 교회 지도 페이지로 이동한다", async ({ page }) => {
     await page.goto("/");
