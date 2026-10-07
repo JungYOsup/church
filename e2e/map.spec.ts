@@ -119,6 +119,8 @@ test.describe("지도 범위", () => {
     test("지도를 옮기면 그 범위 안의 교회만 목록에 남는다", async ({ page }) => {
       await page.goto("/map");
       await expect(churchItems(page)).toHaveCount(ALL_CHURCHES.length);
+      // 지도가 준비된 뒤에 옮긴다. 목록 15개는 지도가 준비되기 전에도 보이므로 준비 신호가 아니다
+      await expect(churchList(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 15개");
 
       await moveFakeMap(page, DOWNTOWN);
       await expect(churchList(page).getByRole("status")).toHaveText(
@@ -133,6 +135,8 @@ test.describe("지도 범위", () => {
     test("범위 안에 교회가 없으면 지도를 옮겨 보라고 안내한다", async ({ page }) => {
       await page.goto("/map");
       await expect(churchItems(page)).toHaveCount(ALL_CHURCHES.length);
+      // 지도가 준비된 뒤에 옮긴다(위 테스트와 같은 이유)
+      await expect(churchList(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 15개");
 
       await moveFakeMap(page, EAST_SEA);
       await expect(churchList(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 0개");
