@@ -283,6 +283,8 @@ test.describe("교회 고르기", () => {
 
   test("고른 교회가 남는 지역을 고르면 지도가 그 지역 교회 모두에 맞춰진다", async ({ page }) => {
     await page.goto("/map");
+    // 지도가 준비된 뒤에 고른다. expect.poll은 fakeMapCenter가 던지는 오류(지도 없음)를 다시 시도하지 않는다
+    await expect(churchList(page).getByRole("status")).toHaveText("현재 지도 범위 내 교회 15개");
     await row(page, "기쁨교회").click();
     await expect.poll(() => fakeMapCenter(page)).toEqual(JOY_CHURCH);
 

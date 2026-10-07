@@ -23,7 +23,8 @@ export default defineConfig({
   projects: [
     {
       name: "chrome",
-      // 설치된 Google Chrome을 쓴다. CI에서는 `npx playwright install chrome`이 필요하다.
+      // 설치된 Google Chrome을 쓴다. CI 러너(ubuntu-latest)에도 깔려 있어 브라우저를 받지 않는다.
+      // 러너 이미지가 바뀌어 Chrome이 없어지면 ci.yml에 `npx playwright install --with-deps chrome`을 더한다.
       use: { ...devices["Desktop Chrome"], channel: "chrome" },
     },
   ],
