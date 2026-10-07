@@ -11,7 +11,8 @@
 - UI: shadcn/ui, lucide-react, Pretendard 폰트
 - 지도: 카카오맵 JavaScript SDK
 - 백엔드 (UI 완성 후): Supabase (DB, Auth, Storage, RLS)
-- 배포: Vercel
+- 배포: Vercel Hobby. 운영 https://church-community-eight.vercel.app (master push마다 자동 배포, 함수 지역 서울 `icn1`,
+  Node는 `package.json`의 `engines`). 다른 branch는 미리보기 배포로 Vercel 로그인이 필요하고 지도는 대체 화면이다
 
 ## Architecture
 ```
@@ -67,7 +68,7 @@ docs/plans/               계획서와 결정 기록
 - 테스트를 먼저 쓰고 실패(red)를 본 뒤 구현한다. `src/lib`의 순수 로직(테스트·`types.ts`·`utils.ts`·`mock/`·`data/` 제외)은 짝 `<이름>.test.ts` 없이 쓰면 PreToolUse hook(`.claude/hooks/require-test-first.sh`)이 막는다. 계획서의 task마다 "테스트 먼저(red)"를 적고 red 출력을 증거로 남긴다.
 - 승인된 계획은 `docs/plans/YYYY-MM-DD-<주제>.md`로 남긴다. 기존 계획이 바뀌면 그 문서의 `## 변경 이력`에 날짜와 이유를 적는다.
 - 컴포넌트는 `src/lib/mock/`이나 Supabase 클라이언트를 직접 import하지 않고, 항상 `src/lib/data/` 함수를 거친다.
-- 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없거나 SDK를 불러오지 못하면 지도 자리에 대체 화면을 보여준다. 실제 지도는 카카오 콘솔에 등록한 `http://localhost:3000`의 `npm run dev`에서만 뜬다.
+- 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없거나 SDK를 불러오지 못하면 지도 자리에 대체 화면을 보여준다. 실제 지도는 카카오 콘솔(JavaScript SDK 도메인)에 등록한 `http://localhost:3000`의 `npm run dev`와 운영 주소에서만 뜬다.
 - 비밀값은 `.env.local`에만 둔다. 이 파일은 읽거나 출력하지 않는다. 새 환경변수를 추가하면 `.env.example`에 이름과 설명만 적는다.
 - Next.js는 AGENTS.md대로 `node_modules/next/dist/docs/`의 문서를 먼저 읽는다. Tailwind v4, shadcn/ui, 카카오맵, Supabase는 처음 쓰는 API를 ctx7로 확인한다 (예: Tailwind v4는 `bg-gradient-*` 대신 `bg-linear-*`, Next 16은 이미지 `priority` 대신 `preload`/`fetchPriority`).
 - 커밋은 사용자가 요청할 때만 한다.

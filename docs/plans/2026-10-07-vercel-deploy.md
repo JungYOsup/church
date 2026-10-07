@@ -56,7 +56,7 @@
     - red: `npm run test:e2e -- -g "요청마다"` → `Expected substring: "no-store" / Received string: "s-maxage=31536000"`
     - green: `npm run build` → `┌ ƒ /`(나머지 라우트 그대로, `○ /_not-found`만 정적). `npm run lint` 통과, `npm run test` → 단위 `Tests 90 passed`, e2e `151 passed (43.3s)`
     - 깨뜨려 보기: `await connection()`을 주석 처리하자 `✘ 홈 렌더링 › 홈은 요청마다 새로 그린다`만 실패(`1 failed, 150 passed`). 되돌림
-- [ ] **T2. Vercel 빌드 설정과 첫 배포**
+- [x] **T2. Vercel 빌드 설정과 첫 배포**
   - 파일: `package.json`(`"engines": { "node": "22.x" }`), `vercel.json`(새 파일: `$schema`, `"regions": ["icn1"]`)
   - 의존: T1
   - 테스트 먼저(red): 해당 없음. 배포 플랫폼이 읽는 설정이라 로컬 테스트로 볼 동작이 없습니다. 아래 운영 응답으로 확인합니다.
@@ -70,7 +70,15 @@
     - 홈 HTML의 첫 "다가오는 행사" 날짜가 오늘(서울) 이후입니다.
     - 빌드 로그의 Node가 22.x입니다.
     - 도메인을 아직 등록하지 않았으므로 지도 자리에는 대체 화면이 나옵니다. 운영에서도 대체 화면 경로가 동작한다는 증거입니다.
-- [ ] **T3. 운영 도메인에서 카카오맵 띄우기**
+  - 증거 (2026-10-07):
+    - 커밋 `3b8f2f2`(engines·vercel.json) → merge `4ee0a47` → `git push origin master`. pre-commit에서 단위 90개, e2e 151개 통과. lock 파일에는 `engines` 세 줄만 더함(`npm ci --dry-run` 통과)
+    - Vercel 프로젝트 `church-community`, 운영 주소 **https://church-community-eight.vercel.app** (`church-community.vercel.app`은 남의 사이트 "ELIM CHURCH"라 Vercel이 `-eight`를 붙임). GitHub deployment `6898356814` Production `success`(sha `4ee0a47`)
+    - 라우트: `/`, `/map`, `/events`, `/notices`, `/community`, `/admin`, `/admin?tab=register`, `/search?q=교회`, `/churches/church-1` 모두 200, `/churches/no-such-church` 404. 탭 제목 `함께하는 교회`
+    - `/`·`/events`: `cache-control: private, no-cache, no-store, max-age=0, must-revalidate`, `x-vercel-cache: MISS`, `x-vercel-id: icn1::icn1::…`(함수가 서울에서 실행). 홈 HTML을 두 번 받으면 내용이 다름
+    - 홈 첫 행사 `<time dateTime="2026-10-09T10:00:00.000Z">`, 서울 기준 오늘(2026-10-07 09:30) 이후
+    - 실제 Chrome으로 운영 `/map`·`/`(1440·375px): 대체 화면 1개, 핀 0개, 콘솔 오류 없음. SDK 요청 `dapi.kakao.com/v2/maps/sdk.js?appkey=<키>`가 `net::ERR_BLOCKED_BY_ORB`로 실패(미등록 도메인). 번들에 32자리 키가 들어 있음(값은 출력하지 않음)
+    - Node 버전: 빌드 로그에 버전 줄이 없어 확인하지 못함. 공식 문서상 `engines.node`가 프로젝트 설정보다 우선함(변경 이력 참고)
+- [x] **T3. 운영 도메인에서 카카오맵 띄우기**
   - 파일: 없음(카카오 콘솔 설정)
   - 의존: T2
   - 테스트 먼저(red): 해당 없음. 외부 콘솔 설정이고, e2e는 실제 카카오 서버를 쓰지 않습니다(`e2e/fixtures.ts`).
@@ -80,7 +88,13 @@
     - `/map` 지도 영역의 핀 버튼이 15개입니다.
     - 콘솔 오류가 없습니다.
     - 375 / 1440px 스크린샷을 Read로 직접 봅니다.
-- [ ] **T4. 문서 반영**
+  - 증거 (2026-10-07, 사용자가 `https://church-community-eight.vercel.app`을 SDK 도메인에 등록한 뒤):
+    - 실제 Chrome, 1440·375px 모두 `/map`: SDK `200`, 대체 화면 0개, 목록 상태 "현재 지도 범위 내 교회 15개", 콘솔 오류 없음
+    - 지도 영역 버튼 17개 = 교회 핀 15개(서연교회 … 생명샘교회) + `ChurchMap`이 붙인 줌 컨트롤(`ZoomControl`, 80행)의 "확대"·"축소". e2e의 가짜 SDK는 줌 컨트롤을 그리지 않아 핀 15개만 셈. 지도 타일은 `mts.kakaocdn.net`, 지도 안 img 21개
+    - 홈(`/`): 대체 화면 0개, 지도 칸에 핀이 그려짐
+    - 스크린샷 4장(1440·375 × `/map`·`/`)을 직접 봄: 수도권 지도 위 핀 15개, 375px에서 지도(위)·목록(아래) 배치, 가로 넘침 없음
+    - 등록 전 같은 스크립트에서는 SDK 요청이 `net::ERR_BLOCKED_BY_ORB`로 막히고 대체 화면이었음(T2). 바뀐 것은 카카오 콘솔 설정뿐이고 다시 배포하지 않음
+- [x] **T4. 문서 반영**
   - 파일: `CLAUDE.md`, `.env.example`, `docs/plans/2026-09-30-church-community.md`(변경 이력), `docs/lessons.md`, 이 계획서(검증 결과)
   - 의존: T3
   - 테스트 먼저(red): 해당 없음. 문서입니다.
@@ -92,6 +106,7 @@
     - 상위 계획서 변경 이력: 배포를 Supabase보다 먼저 한 것, 홈을 요청마다 그리기로 바꾼 것(2026-10-02 "다시 그리는 주기는 Supabase 때 정함"을 바꿈)
     - 배운 점: Vercel은 `.nvmrc` 대신 `engines`를 봄, 상대 날짜 목데이터와 정적 페이지가 만나면 생기는 문제, 그 밖에 진행하며 만난 함정
   - 확인(동작 증거): 문서의 URL과 주소가 실제 운영 주소와 같은지 `grep`으로 봅니다. 커밋하고 merge한 뒤 push합니다(문서만 바뀐 커밋이라 pre-commit은 건너뜀). 하네스 지도 갱신 요청이 오면 따릅니다.
+  - 증거 (2026-10-07): `grep -rno "https\?://[a-z0-9.-]*vercel\.app"`으로 `CLAUDE.md`·`.env.example`·상위 계획서·이 계획서의 운영 주소 5곳이 모두 `https://church-community-eight.vercel.app`이고, 그 주소는 200. 배운 점에 새 절 "배포 (Vercel)"(engines, 정적 페이지와 상대 날짜, 운영 주소 찾기와 `x-vercel-id`, 도메인 등록은 다시 배포가 필요 없음)와 카카오맵 절의 "막힌 요청은 `response`에 잡히지 않는다"를 더함
 
 ## 리스크와 멈출 조건
 - **Vercel 빌드 실패:** 빌드 로그 첫 오류를 받아 원인을 고치고 다시 push합니다. 로그를 볼 수 없으면 사용자에게 `! npx vercel login`을 부탁한 뒤 `vercel inspect --logs`로 봅니다.
@@ -114,6 +129,15 @@
 
 ## 변경 이력
 <!-- run-plan이 계획과 달라진 점을 날짜·내용·이유로 적는다 -->
+- 2026-10-07 (T2): `npm install --package-lock-only`가 `engines` 말고도 이번 작업과 관계없는 선택 의존성 항목(`@tailwindcss/oxide-wasm32-wasi` 아래 `@emnapi/*` 등)을 lock에 더해, 되돌리고 `engines`만 손으로 넣음. 차이를 이번 변경으로 좁히기 위함
+- 2026-10-07 (T2): Node 버전 증거를 "빌드 로그의 Node 22.x"에서 문서 근거로 바꿈. Vercel 빌드 로그에 Node 버전 줄이 나오지 않음. `engines.node`가 프로젝트 설정보다 우선한다는 공식 문서(`/docs/functions/runtimes/node-js/node-js-versions`)와 22.x 빌드가 성공한 것을 근거로 둠
+- 2026-10-07 (T2): 운영 주소가 프로젝트 이름(`church-community.vercel.app`)이 아니라 `church-community-eight.vercel.app`임. 같은 이름의 주소를 다른 사람이 쓰고 있음
 
 ## 검증 결과
 <!-- run-plan이 마무리 검증의 실제 출력 근거를 적는다. 리뷰에서 반영하지 않은 지적은 이유와 함께 적는다 -->
+- **전체 테스트 (2026-10-07, 문서 반영 뒤):** `npm run lint` 통과, `npm run test` → 단위 `Test Files 9 passed (9)`, `Tests 90 passed (90)`, e2e `151 passed (47.5s)`
+- **일부러 깨뜨려 보기:** T1에서 `await connection()`을 주석 처리하자 `✘ 홈 렌더링 › 홈은 요청마다 새로 그린다`만 실패(`1 failed, 150 passed`). 되돌린 뒤 pre-commit에서 151개 통과
+- **운영 확인:** T2(라우트 9개 200·없는 교회 404, `/` no-store, `x-vercel-id: icn1::icn1`, 홈 첫 행사 10/9)와 T3(실제 Chrome 1440·375px에서 SDK 200, 핀 15개, "현재 지도 범위 내 교회 15개", 콘솔 오류 없음) 증거 참고
+- **화면 확인:** 보이는 모습을 바꾼 task가 없어 개발 서버 확인은 하지 않음. 대신 운영 사이트의 `/map`과 `/`를 1440·375px로 찍어 직접 봄(T3)
+- **독립 리뷰(구현과 분리된 agent, 범위 `215e293..4ee0a47`):** 지적 0건. 확인한 것: `connection()` 사용이 설치된 Next 16.3.8 문서와 같고 `cacheComponents`가 꺼져 있어 `io()`가 필요 없음, `.next/prerender-manifest.json`에 `/`가 없음, `cache-control.js` 소스상 테스트가 정적으로 돌아가는 회귀를 잡음, `npm ci --dry-run` 통과, `vercel.json` 형식. `consoleErrors` 자동 fixture 때문에 쓰지 않는 page가 열리는 것은 해가 없어 그대로 둠
+- **확인하지 못한 것:** Vercel 빌드의 실제 Node 버전(빌드 로그에 줄이 없음, 변경 이력 참고)
