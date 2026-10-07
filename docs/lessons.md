@@ -123,7 +123,8 @@
 
 ### 설치된 브라우저와 Playwright 버전이 맞지 않는다
 - **원인:** Playwright 1.63은 크롬 rev 1243을 쓰는데, 캐시에는 rev 1228만 있었다.
-- **대응:** `channel: "chrome"`으로 설치된 Google Chrome을 써서 약 150MB 다운로드를 피했다. CI를 붙이면 `npx playwright install chrome`이 필요하다.
+- **대응:** `channel: "chrome"`으로 설치된 Google Chrome을 써서 약 150MB 다운로드를 피했다.
+- **CI에서는 설치 단계가 필요 없었다:** GitHub의 `ubuntu-latest`(24.04) 러너에 Google Chrome이 깔려 있어, `npx playwright install` 없이 같은 설정으로 돌았다([README·CI 계획](plans/2026-10-07-readme-ci.md) T1).
 
 ### 실패를 알기까지 30초가 걸린다
 - **원인:** 기본 대기 시간이 30초라, 없는 요소를 찾을 때 30초를 다 기다린다.
@@ -164,6 +165,8 @@
 
 ### 가짜 SDK 손잡이는 지도가 준비된 뒤에 쓴다
 - `page.goto` 직후 `window.__fakeKakao.moveTo`를 부르면 SDK 스크립트가 아직 돌지 않아 `Cannot read properties of undefined`가 난다. "현재 지도 범위 내 교회" 문구 같은 준비 신호를 먼저 기다린다.
+- **목록 개수는 준비 신호가 아니다:** 교회 목록은 지도가 준비되기 전에도 15개라, "목록 15개"만 기다린 테스트 2개가 이 컴퓨터에서는 늘 통과하고 첫 CI(더 느린 러너)에서 실패했다. 가짜 SDK 응답을 1.5초 늦추면 로컬에서도 같은 오류로 재현된다. 타이밍에 기대는 테스트가 의심되면 이렇게 늦춰 본다([README·CI 계획](plans/2026-10-07-readme-ci.md) 변경 이력).
+- **`expect.poll`은 콜백이 던지면 다시 시도하지 않는다:** 값이 틀리면 다시 묻지만, 콜백 자체가 예외를 던지면(`fakeMapCenter`가 지도 없음으로 TypeError) 바로 실패한다(`invokePollMatcher`에서 `await actual()`이 `try` 밖). 그래서 `expect.poll`로 손잡이를 읽기 전에도 준비 신호를 기다린다.
 
 ### 잠깐 끼었다 사라지는 값은 DOM 변화를 기록해 잡는다
 - 지역을 바꾸는 순간 앞 지역의 범위로 거른 "0개"가 한 번 렌더된 뒤 "9개"로 바뀌었다. 최종 값만 보는 단언으로는 잡히지 않아, 개수 문구에 `MutationObserver`를 붙여 바뀐 값을 모두 기록하고 그 안에 잘못된 값이 없는지 본다(`role="status"`는 DOM 변화가 화면 읽기 프로그램에 전해질 수 있다).
@@ -204,6 +207,18 @@
 
 ### 카카오 도메인 등록은 다시 배포하지 않아도 된다
 - 키는 빌드 때 번들에 박히지만, 도메인 허용은 카카오가 요청 때마다 판단한다. 운영 주소를 JavaScript SDK 도메인에 더하자 같은 배포에서 바로 지도가 떴다. 등록 전에는 SDK 요청이 ORB로 막혀 대체 화면이었다.
+
+## CI와 README (GitHub)
+
+### `test.only`는 로컬 검사를 빠져나간다
+- `test.only`를 남긴 채 커밋하면 pre-commit의 `npm run test`가 그 테스트 하나만 돌리고(`1 passed`) 통과한다. `playwright.config.ts`의 `forbidOnly: !!process.env.CI`로 CI(GitHub Actions가 `CI=true`를 둠)에서만 실패하게 했다. 로컬에서 확인할 때는 `CI=1 npx playwright test --list`.
+- 테스트가 하나도 돌지 않고 실패하면 `test-results/`가 비어 trace를 올리지 못한다(`No files were found`, 경고만).
+
+### 브랜치를 정하지 않은 CI 배지는 다른 branch의 실패를 보여 준다
+- `badge.svg`만 쓰면 master에 실행이 없을 때 가장 최근 실행(지운 branch의 실패)을 보여 `failing`이었다. `badge.svg?branch=master`로 고정한다. 링크도 `?query=branch%3Amaster`로 맞춘다.
+
+### GitHub의 Mermaid 그림은 화면에 들어와야 그려진다
+- README를 Playwright로 찍을 때 `fullPage`나 `clip`으로 화면 밖을 찍으면 그림 자리가 비어 있다. 그림은 `viewscreen.githubusercontent.com` iframe으로 늦게 그려지므로, 그 위치로 스크롤하고 몇 초 기다린 뒤 찍는다.
 
 ## 날짜와 시간
 

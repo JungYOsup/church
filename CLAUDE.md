@@ -49,6 +49,8 @@ e2e/                      Playwright 동작 테스트. 메뉴 명세는 src를 �
                           카카오맵은 실제 서버를 쓰지 않는다: fixtures.ts가 SDK 요청에 빈 스크립트(대체 화면) 또는
                           kakao-fake.js(가짜 SDK, kakaoSdk: "fake")를 돌려준다
 docs/plans/               계획서와 결정 기록
+docs/screenshots/         README 스크린샷 (진짜 지도가 뜨는 운영 사이트에서 찍음)
+.github/workflows/ci.yml  GitHub Actions: push·PR마다 lint → 단위 → e2e(빌드 포함). 러너의 Google Chrome을 씀
 ```
 앞으로 생길 폴더(`supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
 
@@ -78,5 +80,6 @@ docs/plans/               계획서와 결정 기록
 ## Definition of Done
 - `npm run test:unit && npm run lint && npm run build` 통과. 앱 코드(`src/`, `public/`, 설정 파일)를 바꾼 응답이 끝날 때 Stop hook(`.claude/hooks/verify-on-stop.sh`)이 바뀐 로직 파일의 짝 테스트 확인과 함께 자동으로 실행하고, 실패하면 응답을 끝내지 못한다.
 - `npm run test` 통과. 커밋할 때 git pre-commit hook(`.husky/pre-commit`)이 `npm run lint && npm run test`를 자동 실행하고, 실패하면 커밋이 거부된다(문서만 바뀐 커밋은 건너뜀). 실패하면 고친 뒤 새 커밋을 만들고 `--no-verify`로 우회하지 않는다. 새 화면 동작을 만들면 `e2e/`에 테스트를 함께 추가한다.
+- push한 커밋의 GitHub Actions CI가 초록이다(`gh run list`로 확인). 로컬보다 느린 러너에서만 드러나는 경쟁이 있고, CI에서는 `test.only`가 `forbidOnly`로 실패한다.
 - 보이는 모습(색·간격·디자인)은 `npm run dev`로 띄워 375px / 768px / 1440px 폭에서 직접 확인한다.
 - 계획과 달라진 점을 계획서 변경 이력에 적었다.
