@@ -2,7 +2,7 @@
 
 여러 지역 교회를 지도 위에서 연결하는 교회 연합 커뮤니티 웹입니다. 지도에서 교회를 찾고, 교회들의 행사·공지·나눔 글을 한곳에서 봅니다.
 
-[![CI](https://github.com/JungYOsup/church/actions/workflows/ci.yml/badge.svg)](https://github.com/JungYOsup/church/actions/workflows/ci.yml)
+[![CI](https://github.com/JungYOsup/church/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/JungYOsup/church/actions/workflows/ci.yml?query=branch%3Amaster)
 
 **운영 사이트: https://church-community-eight.vercel.app**
 
