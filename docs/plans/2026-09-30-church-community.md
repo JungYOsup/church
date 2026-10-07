@@ -283,3 +283,7 @@ src/components/
   - **빌드 설정:** `package.json`의 `engines.node`를 `22.x`로 둠(Vercel 기본은 24이고 `.nvmrc`를 읽지 않음). `vercel.json`에서 함수 지역을 기본 `iad1`(워싱턴)에서 `icn1`(서울)로 옮김. Supabase도 서울 지역에 둘 예정
   - **카카오맵:** 키는 Vercel 환경변수 Production에만 넣고, 운영 주소를 JavaScript SDK 도메인에 등록함(3단계 절의 "카카오 콘솔에 배포 도메인을 추가합니다"). 미리보기 배포는 대체 화면
   - **README·CI·커스텀 도메인**은 이번에 하지 않음
+- 2026-10-07: README와 CI를 더함 ([세부 계획](2026-10-07-readme-ci.md)). 3단계의 README 항목 중 스크린샷과 아키텍처(데이터 흐름 그림)를 먼저 씀
+  - **README:** 운영 링크, 운영 사이트에서 찍은 스크린샷 4장(`docs/screenshots/`), 주요 기능, 기술 스택, 구조, 실행·테스트 방법, 하네스로 정한 개발 방식(짧은 절), 로드맵, 사진 출처. ERD와 RLS 설계는 Supabase 단계에서 더함. 저장소 About에 운영 링크와 설명을 넣음
+  - **CI(`.github/workflows/ci.yml`):** push와 PR마다 lint → 단위 → e2e. 빌드는 e2e의 webServer 안에서 한 번 함. 러너에 Google Chrome이 깔려 있어 Playwright 브라우저를 받지 않음. 카카오 키 없이 가짜 SDK로 돎. CI에서는 `forbidOnly`로 `test.only`를 막음
+  - **CI가 처음 찾은 것:** 지도 범위 테스트 2개가 지도 준비를 기다리지 않아, 더 느린 러너에서만 실패했음. 준비 문구를 기다리게 고침

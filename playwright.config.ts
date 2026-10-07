@@ -7,6 +7,9 @@ const BASE_URL = `http://localhost:${PORT}`;
 export default defineConfig({
   testDir: "./e2e",
   reporter: "list",
+  // test.only를 남긴 채 커밋하면 로컬에서는 그 테스트 하나만 돌고 통과해 pre-commit이 잡지 못한다.
+  // CI(GitHub Actions가 CI=true를 둠)에서는 실패하게 한다
+  forbidOnly: !!process.env.CI,
   // 기본값(CPU의 절반, 이 컴퓨터는 5)으로 돌리면 부하가 커져 클릭의 "안정" 대기가 5초를 넘기며 흔들렸다
   // (docs/lessons.md). 3으로 줄여 부하를 낮춘다
   workers: 3,
@@ -20,7 +23,8 @@ export default defineConfig({
   projects: [
     {
       name: "chrome",
-      // 설치된 Google Chrome을 쓴다. CI에서는 `npx playwright install chrome`이 필요하다.
+      // 설치된 Google Chrome을 쓴다. CI 러너(ubuntu-latest)에도 깔려 있어 브라우저를 받지 않는다.
+      // 러너 이미지가 바뀌어 Chrome이 없어지면 ci.yml에 `npx playwright install --with-deps chrome`을 더한다.
       use: { ...devices["Desktop Chrome"], channel: "chrome" },
     },
   ],
