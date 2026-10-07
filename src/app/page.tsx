@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { CommunityFeed } from "@/components/home/CommunityFeed";
 import { HeroBanner } from "@/components/home/HeroBanner";
 import { MapPreview } from "@/components/home/MapPreview";
@@ -7,7 +8,11 @@ import { RepRegisterCta } from "@/components/home/RepRegisterCta";
 import { StatCards } from "@/components/home/StatCards";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // 요청마다 그린다. 빌드 때 정적으로 만들면 "다가오는 행사"와 "N시간 전"이 배포한 날에 굳는다.
+  // 주기적으로 다시 만드는 방식(revalidate)은 기한이 지난 뒤 첫 방문자에게 옛 페이지를 먼저 보여 준다
+  await connection();
+
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
       <HeroBanner />
