@@ -1,0 +1,48 @@
+# push와 PR마다 로컬 pre-commit과 같은 검사(lint → 단위 → e2e)를 GitHub에서 돌린다.
+# 빌드는 따로 하지 않는다. e2e가 playwright.config.ts의 webServer로 빌드한 결과에서 돌기 때문이다.
+# 카카오맵은 가짜 키와 가짜 SDK(e2e/fixtures.ts)로 돌아 비밀값이 필요 없다.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# 같은 branch에 새 커밋이 오면 이전 실행은 취소한다
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: 단위 테스트 (Vitest)
+        run: npm run test:unit
+
+      # 러너(ubuntu-latest)에 Google Chrome이 깔려 있어 Playwright 브라우저를 따로 받지 않는다(channel: "chrome")
+      - name: 동작 테스트 (Playwright, 빌드 포함)
+        run: npm run test:e2e
+
+      - name: 실패한 테스트의 trace 올리기
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
