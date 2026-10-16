@@ -12,6 +12,7 @@
     ],
     "ask": [
       "Bash(git push *)",
+      "Bash(gh pr merge *)",
       "Bash(git reset *--hard*)",
       "Bash(git reset *--merge*)",
       "Bash(git clean *)",
