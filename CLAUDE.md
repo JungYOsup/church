@@ -66,14 +66,21 @@ docs/screenshots/         README 스크린샷 (진짜 지도가 뜨는 운영 �
 - `npm run test:unit` — Vitest 단위 테스트(`src/**/*.test.ts`)만. 1초 안팎
 
 ## Rules
-- 코드나 설정을 바꾸는 요청은 먼저 `spec-check` 스킬(`.claude/skills/spec-check/`)로 영향 범위를 찾고 작음·중간·큼으로 판정한다. 작음은 바로 수정, 중간은 짧은 계획을 확인받고 진행한다. 큼은 `plan-work` 스킬로 plan mode에서 계획하고 확인 가능한 task로 나눠 승인받은 뒤, `run-plan` 스킬로 앞 task가 동작함을 확인하며 하나씩 구현한다(실패하면 고쳐서 통과시킨 뒤 다음 task). 모호한 요구사항은 먼저 질문한다.
-- 테스트를 먼저 쓰고 실패(red)를 본 뒤 구현한다. `src/lib`의 순수 로직(테스트·`types.ts`·`utils.ts`·`mock/`·`data/` 제외)은 짝 `<이름>.test.ts` 없이 쓰면 PreToolUse hook(`.claude/hooks/require-test-first.sh`)이 막는다. 계획서의 task마다 "테스트 먼저(red)"를 적고 red 출력을 증거로 남긴다.
+- 코드나 설정을 바꾸는 요청은 먼저 `spec-check` 스킬(`.claude/skills/spec-check/`)로 영향 범위를 찾고 작음·중간·큼으로 판정한다. 작음은 바로 수정, 중간은 짧은 계획을 확인받고 진행한다. 큼은 `plan-work` 스킬로 plan mode에서 계획하고 확인 가능한 task로 나눠 승인받은 뒤, `run-plan` 스킬로 앞 task가 동작함을 확인하며 하나씩 구현한다(실패하면 고쳐서 통과시킨 뒤 다음 task). 해석이 여러 갈래면
+  조용히 하나를 고르지 않고 묻고, 묻지 않고 정한 가정은 보고에 드러낸다. 더 단순한 방법이 있으면 먼저 말한다.
+- 테스트를 먼저 쓰고 실패(red)를 본 뒤 구현한다. 버그는 재현하는 테스트부터 쓰고, 리팩터링은 기존 테스트를 고치지 않은 채
+  전후로 통과하는 것으로 확인한다. `src/lib`의 순수 로직(테스트·`types.ts`·`utils.ts`·`mock/`·`data/` 제외)은 짝 `<이름>.test.ts` 없이 쓰면 PreToolUse hook(`.claude/hooks/require-test-first.sh`)이 막는다. 계획서의 task마다 "테스트 먼저(red)"를 적고 red 출력을 증거로 남긴다.
+- 요청에 필요한 만큼만 코드를 쓴다. 요청받지 않은 기능·설정 옵션, 한 곳에서만 쓰는 추상화, 일어날 수 없는 상황의 오류 처리는
+  넣지 않는다. 공통 컴포넌트는 두 번째로 쓰는 곳이 생길 때 올린다(예: `FilterChips`, `ArticleRow`).
+- 바꾼 줄은 모두 요청(승인된 계획의 task 포함)으로 이어져야 한다. 주변 코드·주석·포맷을 덩달아 다듬거나 고장 나지 않은 코드를
+  리팩터링하지 않고, 기존 스타일을 따른다. 관계없는 죽은 코드는 보고에 적기만 하고, 내 변경으로 쓰이지 않게 된 import·변수·함수만 지운다.
 - 승인된 계획은 `docs/plans/YYYY-MM-DD-<주제>.md`로 남긴다. 기존 계획이 바뀌면 그 문서의 `## 변경 이력`에 날짜와 이유를 적는다.
 - 컴포넌트는 `src/lib/mock/`이나 Supabase 클라이언트를 직접 import하지 않고, 항상 `src/lib/data/` 함수를 거친다.
 - 카카오맵 키가 없어도 빌드와 화면이 깨지지 않아야 한다. 키가 없거나 SDK를 불러오지 못하면 지도 자리에 대체 화면을 보여준다. 실제 지도는 카카오 콘솔(JavaScript SDK 도메인)에 등록한 `http://localhost:3000`의 `npm run dev`와 운영 주소에서만 뜬다.
 - 비밀값은 `.env.local`에만 둔다. 이 파일은 읽거나 출력하지 않는다. 새 환경변수를 추가하면 `.env.example`에 이름과 설명만 적는다.
 - Next.js는 AGENTS.md대로 `node_modules/next/dist/docs/`의 문서를 먼저 읽는다. Tailwind v4, shadcn/ui, 카카오맵, Supabase는 처음 쓰는 API를 ctx7로 확인한다 (예: Tailwind v4는 `bg-gradient-*` 대신 `bg-linear-*`, Next 16은 이미지 `priority` 대신 `preload`/`fetchPriority`).
-- 커밋은 사용자가 요청할 때만 한다.
+- 커밋은 사용자가 요청할 때만 한다. 작업은 `feat/`·`chore/`·`docs/` branch에서 `<종류>: <한글 요약>`으로 커밋하고,
+  master에는 `git merge --no-ff`로 합친다(메시지 `Merge branch '<branch>': <요약>`). master push는 곧 운영 배포다.
 - 작업 중 걸려 넘어진 함정과 해결법은 [배운 점](docs/lessons.md)에 있다. 낯선 오류를 만나면 먼저 확인하고, 새 함정을 해결하면 그 문서에 추가한다.
 - [하네스 지도](https://claude.ai/artifact/925V77bde8aKNrdrCgXHke)는 하네스 파일이나 커밋이 바뀌면 Stop hook(`.claude/hooks/sync-harness-map.sh`)이 갱신을 요청한다. 점수는 진단 결과가 바뀔 때만 고친다.
 
