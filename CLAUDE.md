@@ -51,6 +51,9 @@ e2e/                      Playwright 동작 테스트. 메뉴 명세는 src를 �
 docs/plans/               계획서와 결정 기록
 docs/screenshots/         README 스크린샷 (진짜 지도가 뜨는 운영 사이트에서 찍음)
 .github/workflows/ci.yml  GitHub Actions: push·PR마다 lint → 단위 → e2e(빌드 포함). 러너의 Google Chrome을 씀
+.github/workflows/gemini-*.yml
+                          PR 리뷰: PR을 열거나 @gemini-cli /review 댓글을 달면 Gemini(AI Studio 무료 티어, secret GEMINI_API_KEY)가
+                          요약과 줄별 코멘트를 단다(COMMENT 리뷰라 merge를 막지 않음). 리뷰 기준은 GEMINI.md(CLAUDE.md를 불러옴)
 ```
 앞으로 생길 폴더(`supabase/migrations/`)는 [구현 계획](docs/plans/2026-09-30-church-community.md)을 따른다.
 
@@ -80,7 +83,9 @@ docs/screenshots/         README 스크린샷 (진짜 지도가 뜨는 운영 �
 - 비밀값은 `.env.local`에만 둔다. 이 파일은 읽거나 출력하지 않는다. 새 환경변수를 추가하면 `.env.example`에 이름과 설명만 적는다.
 - Next.js는 AGENTS.md대로 `node_modules/next/dist/docs/`의 문서를 먼저 읽는다. Tailwind v4, shadcn/ui, 카카오맵, Supabase는 처음 쓰는 API를 ctx7로 확인한다 (예: Tailwind v4는 `bg-gradient-*` 대신 `bg-linear-*`, Next 16은 이미지 `priority` 대신 `preload`/`fetchPriority`).
 - 커밋은 사용자가 요청할 때만 한다. 작업은 `feat/`·`chore/`·`docs/` branch에서 `<종류>: <한글 요약>`으로 커밋하고,
-  master에는 `git merge --no-ff`로 합친다(메시지 `Merge branch '<branch>': <요약>`). master push는 곧 운영 배포다.
+  branch를 push해 PR(`gh pr create`)로 합친다. PR을 열면 Gemini가 리뷰를 단다(다시 받으려면 `@gemini-cli /review` 댓글).
+  PR의 CI가 초록이고 Gemini 지적을 반영하거나 이유를 답글로 남긴 뒤
+  `gh pr merge <번호> --merge --subject "Merge branch '<branch>' (#<번호>): <요약>"`으로 합친다. merge는 곧 master 운영 배포다.
 - 작업 중 걸려 넘어진 함정과 해결법은 [배운 점](docs/lessons.md)에 있다. 낯선 오류를 만나면 먼저 확인하고, 새 함정을 해결하면 그 문서에 추가한다.
 - [하네스 지도](https://claude.ai/artifact/925V77bde8aKNrdrCgXHke)는 하네스 파일이나 커밋이 바뀌면 Stop hook(`.claude/hooks/sync-harness-map.sh`)이 갱신을 요청한다. 점수는 진단 결과가 바뀔 때만 고친다.
 
